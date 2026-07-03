@@ -12,6 +12,7 @@ const links = [
   { href: "/kategoriler", label: "Kategoriler" },
   { href: "/hareketler", label: "Hareketler" },
   { href: "/uyarilar", label: "Uyarılar" },
+  { href: "/magaza", label: "Mağaza", external: true },
   { href: "/profil", label: "Profil" },
 ];
 
@@ -27,15 +28,31 @@ export function Sidebar({ userName }: { userName: string }) {
       <nav className="flex flex-1 flex-col gap-1 p-4">
         {links.map((link) => {
           const active = pathname === link.href;
+          const className = `rounded-lg px-4 py-3 text-base font-medium transition ${
+            active
+              ? "bg-emerald-600 text-white"
+              : "text-slate-700 hover:bg-slate-100"
+          }`;
+
+          if ("external" in link && link.external) {
+            return (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+              >
+                {link.label}
+              </a>
+            );
+          }
+
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={`rounded-lg px-4 py-3 text-base font-medium transition ${
-                active
-                  ? "bg-emerald-600 text-white"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
+              className={className}
             >
               {link.label}
             </Link>

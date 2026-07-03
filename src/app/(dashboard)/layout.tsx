@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
+import { isStaff } from "@/lib/roles";
 
 export default async function DashboardLayout({
   children,
@@ -10,6 +11,10 @@ export default async function DashboardLayout({
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
+  }
+
+  if (!isStaff(session.user.role)) {
+    redirect("/magaza");
   }
 
   return (

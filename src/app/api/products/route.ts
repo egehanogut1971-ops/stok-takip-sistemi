@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { MOVEMENT_TYPES } from "@/lib/constants";
 import { applyStockMovement } from "@/lib/stock";
 import { getStockRows } from "@/lib/stockRows";
+import {
+  parseImageUrls,
+  resolveProductSlug,
+  syncProductImages,
+} from "@/lib/productHelpers";
+import { isStaff } from "@/lib/roles";
 
 type SizeInput = {
   size: string;
@@ -22,7 +28,7 @@ function parseSizes(body: unknown): SizeInput[] {
 
 export async function GET(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !isStaff(session.user.role)) {
     return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   }
 
@@ -46,7 +52,7 @@ export async function GET(request: Request) {
           }
         : {}),
     },
-    include: { category: true, sizes: { orderBy: { size: "asc" } } },
+    include: { category: true, sizes: { orderBy: { size: "asc" } }, images: { orderBy: { sortOrder: "asc" } } },
     orderBy: { name: "asc" },
   });
 
@@ -65,7 +71,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !isStaff(session.user.role)) {
     return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   }
 
@@ -76,6 +82,12 @@ export async function POST(request: Request) {
     const costPrice = Number(body.costPrice ?? 0);
     const salePrice = Number(body.salePrice ?? 0);
     const sku = body.sku ? String(body.sku).trim() : null;
+    const description = body.description
+      ? String(body.description).trim()
+      : null;
+    const isPublished = Boolean(body.isPublished);
+    const slugInput = body.slug ? String(body.slug).trim() : "";
+    const imageUrls = parseImageUrls(body.images);
     const sizes = parseSizes(body.sizes);
 
     if (!name || !categoryId) {
@@ -123,6 +135,10 @@ export async function POST(request: Request) {
       }
     }
 
+    const slug = slugInput
+      ? await resolveProductSlug(slugInput)
+      : await resolveProductSlug(name);
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -130,6 +146,9 @@ export async function POST(request: Request) {
         costPrice,
         salePrice,
         sku,
+        description,
+        slug,
+        isPublished,
         sizes: {
           create: sizes.map((s) => ({
             size: s.size,
@@ -138,8 +157,10 @@ export async function POST(request: Request) {
           })),
         },
       },
-      include: { category: true, sizes: { orderBy: { size: "asc" } } },
+      include: { category: true, sizes: { orderBy: { size: "asc" } }, images: { orderBy: { sortOrder: "asc" } } },
     });
+
+    await syncProductImages(product.id, imageUrls);
 
     for (const input of sizes) {
       if ((input.initialStock ?? 0) > 0) {
@@ -158,7 +179,7 @@ export async function POST(request: Request) {
 
     const updated = await prisma.product.findUnique({
       where: { id: product.id },
-      include: { category: true, sizes: { orderBy: { size: "asc" } } },
+      include: { category: true, sizes: { orderBy: { size: "asc" } }, images: { orderBy: { sortOrder: "asc" } } },
     });
 
     return NextResponse.json(updated, { status: 201 });

@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MOVEMENT_TYPES } from "@/lib/constants";
 import { applyStockMovement } from "@/lib/stock";
+import { resolveProductSlug } from "@/lib/productHelpers";
+import { isStaff } from "@/lib/roles";
 
 type ImportRow = {
   name: string;
@@ -16,7 +18,7 @@ type ImportRow = {
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !isStaff(session.user.role)) {
     return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   }
 
@@ -80,12 +82,14 @@ export async function POST(request: Request) {
       });
 
       if (!product) {
+        const slug = await resolveProductSlug(first.name);
         product = await prisma.product.create({
           data: {
             name: first.name,
             categoryId: category.id,
             costPrice: first.costPrice,
             salePrice: first.salePrice,
+            slug,
           },
           include: { sizes: true },
         });

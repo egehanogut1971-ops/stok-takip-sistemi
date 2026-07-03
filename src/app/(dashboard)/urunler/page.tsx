@@ -19,10 +19,14 @@ type Product = {
   id: string;
   name: string;
   sku: string | null;
+  description: string | null;
+  slug: string;
+  isPublished: boolean;
   costPrice: number;
   salePrice: number;
   category: Category;
   sizes: ProductSize[];
+  images: { id: string; url: string; sortOrder: number }[];
 };
 
 type SizeFormRow = {
@@ -39,6 +43,10 @@ const emptyForm = {
   categoryId: "",
   costPrice: "",
   salePrice: "",
+  description: "",
+  slug: "",
+  isPublished: false,
+  imageUrls: "",
 };
 
 function defaultSizeRow(): SizeFormRow {
@@ -87,6 +95,10 @@ export default function ProductsPage() {
       categoryId: product.category.id,
       costPrice: String(product.costPrice),
       salePrice: String(product.salePrice),
+      description: product.description ?? "",
+      slug: product.slug,
+      isPublished: product.isPublished,
+      imageUrls: product.images.map((img) => img.url).join("\n"),
     });
     setSizeRows(
       product.sizes.map((s) => {
@@ -153,6 +165,13 @@ export default function ProductsPage() {
       categoryId: form.categoryId,
       costPrice: Number(form.costPrice),
       salePrice: Number(form.salePrice),
+      description: form.description || null,
+      slug: form.slug || undefined,
+      isPublished: form.isPublished,
+      images: form.imageUrls
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
       sizes,
     };
 
@@ -270,7 +289,46 @@ export default function ProductsPage() {
             className="rounded-lg border px-4 py-3 text-lg"
             required
           />
+          <input
+            placeholder="URL slug (boş bırakılırsa otomatik)"
+            value={form.slug}
+            onChange={(e) => setForm({ ...form, slug: e.target.value })}
+            className="rounded-lg border px-4 py-3 text-lg md:col-span-2"
+          />
         </div>
+
+        <textarea
+          placeholder="Mağaza açıklaması"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          rows={4}
+          className="w-full rounded-lg border px-4 py-3 text-lg"
+        />
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Ürün fotoğrafları (her satıra bir URL)
+          </label>
+          <textarea
+            placeholder="https://ornek.com/foto1.jpg&#10;https://ornek.com/foto2.jpg"
+            value={form.imageUrls}
+            onChange={(e) => setForm({ ...form, imageUrls: e.target.value })}
+            rows={3}
+            className="w-full rounded-lg border px-4 py-3 font-mono text-sm"
+          />
+        </div>
+
+        <label className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <input
+            type="checkbox"
+            checked={form.isPublished}
+            onChange={(e) =>
+              setForm({ ...form, isPublished: e.target.checked })
+            }
+            className="h-5 w-5"
+          />
+          <span className="font-medium text-emerald-900">Mağazada yayınla</span>
+        </label>
 
         <ProfitPreview
           costPrice={Number(form.costPrice) || 0}
@@ -408,6 +466,7 @@ export default function ProductsPage() {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-4 py-3 text-left">Ürün</th>
+              <th className="px-4 py-3 text-left">Mağaza</th>
               <th className="px-4 py-3 text-left">Bedenler</th>
               <th className="px-4 py-3 text-left">Kategori</th>
               <th className="px-4 py-3 text-left">Toplam Stok</th>
@@ -425,6 +484,20 @@ export default function ProductsPage() {
               return (
                 <tr key={p.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{p.name}</td>
+                  <td className="px-4 py-3">
+                    {p.isPublished ? (
+                      <a
+                        href={`/magaza/urun/${p.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 hover:underline"
+                      >
+                        Yayında
+                      </a>
+                    ) : (
+                      <span className="text-slate-400">Gizli</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm">{sizeSummary}</td>
                   <td className="px-4 py-3">{p.category.name}</td>
                   <td className="px-4 py-3">{totalStock} adet</td>
