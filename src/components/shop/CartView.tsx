@@ -182,7 +182,7 @@ export function CartView() {
 
         <Link
           href="/magaza/odeme"
-          className="mt-6 block rounded-lg bg-emerald-600 px-6 py-3 text-center font-semibold text-white hover:bg-emerald-700"
+          className="mt-6 block rounded-full bg-emerald-600 px-6 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
         >
           Ödemeye Geç
         </Link>

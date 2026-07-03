@@ -9,6 +9,7 @@ const links = [
   { href: "/stok-gir", label: "Stok Giriş" },
   { href: "/stok-cik", label: "Stok Çıkış" },
   { href: "/urunler", label: "Ürünler" },
+  { href: "/siparisler", label: "Siparişler" },
   { href: "/kategoriler", label: "Kategoriler" },
   { href: "/hareketler", label: "Hareketler" },
   { href: "/uyarilar", label: "Uyarılar" },

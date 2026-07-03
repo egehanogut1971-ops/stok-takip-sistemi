@@ -1,17 +1,22 @@
 import Link from "next/link";
 import { CheckoutForm } from "@/components/shop/CheckoutForm";
+import { CheckoutSteps } from "@/components/shop/CheckoutSteps";
 
 export default function OdemePage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <CheckoutSteps current={2} />
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Ödeme</h1>
-        <p className="mt-2 text-slate-600">
-          Teslimat bilgilerinizi girin ve siparişi tamamlayın.
+        <h1 className="text-2xl font-bold text-slate-900">Teslimat Bilgileri</h1>
+        <p className="mt-1 text-slate-600">
+          Bilgilerinizi girin ve güvenli ödemeye geçin.
         </p>
       </div>
       <CheckoutForm />
-      <Link href="/magaza/sepet" className="inline-block text-emerald-700 hover:underline">
+      <Link
+        href="/magaza/sepet"
+        className="inline-block text-sm font-medium text-emerald-700 hover:underline"
+      >
         ← Sepete dön
       </Link>
     </div>
