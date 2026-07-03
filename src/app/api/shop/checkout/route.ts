@@ -65,10 +65,12 @@ export async function POST(request: Request) {
           for (const line of cart.items) {
             const size = await tx.productSize.findUnique({
               where: { id: line.productSizeId },
-              include: { product: true },
+              include: {
+                product: { include: { shopListing: true } },
+              },
             });
 
-            if (!size || !size.product.isPublished) {
+            if (!size || !size.product.shopListing?.isPublished) {
               throw new Error(`${line.productName} artık satışta değil.`);
             }
 

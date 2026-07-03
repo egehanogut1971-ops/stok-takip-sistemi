@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { getProductCoverImage } from "@/lib/shop";
+import { getListingCoverImage } from "@/lib/shop";
 
 export const CART_COOKIE = "shop-cart";
 const CART_MAX_AGE = 60 * 60 * 24 * 7;
@@ -82,11 +82,17 @@ export async function resolveCartItems(
   const sizes = await prisma.productSize.findMany({
     where: {
       id: { in: sizeIds },
-      product: { isPublished: true },
+      product: {
+        shopListing: { isPublished: true },
+      },
     },
     include: {
       product: {
-        include: { images: { orderBy: { sortOrder: "asc" } } },
+        include: {
+          shopListing: {
+            include: { images: { orderBy: { sortOrder: "asc" } } },
+          },
+        },
       },
     },
   });
@@ -96,7 +102,8 @@ export async function resolveCartItems(
 
   for (const item of items) {
     const size = sizeMap.get(item.productSizeId);
-    if (!size) continue;
+    const listing = size?.product.shopListing;
+    if (!size || !listing) continue;
 
     const quantity = Math.min(item.quantity, size.currentStock);
     if (quantity <= 0) continue;
@@ -104,13 +111,13 @@ export async function resolveCartItems(
     lines.push({
       productSizeId: size.id,
       quantity,
-      productName: size.product.name,
+      productName: listing.displayName,
       size: size.size,
-      unitPrice: size.product.salePrice,
-      lineTotal: size.product.salePrice * quantity,
+      unitPrice: listing.salePrice,
+      lineTotal: listing.salePrice * quantity,
       maxStock: size.currentStock,
-      slug: size.product.slug,
-      imageUrl: getProductCoverImage(size.product.images),
+      slug: listing.slug,
+      imageUrl: getListingCoverImage(listing.images),
     });
   }
 
@@ -125,16 +132,20 @@ export async function getResolvedCart(): Promise<ResolvedCart> {
   return resolveCartItems(items);
 }
 
+async function findPublishedSize(productSizeId: string) {
+  return prisma.productSize.findFirst({
+    where: {
+      id: productSizeId,
+      product: { shopListing: { isPublished: true } },
+    },
+  });
+}
+
 export async function mergeCartItem(
   productSizeId: string,
   quantity: number,
 ): Promise<{ error?: string }> {
-  const size = await prisma.productSize.findFirst({
-    where: {
-      id: productSizeId,
-      product: { isPublished: true },
-    },
-  });
+  const size = await findPublishedSize(productSizeId);
 
   if (!size) {
     return { error: "Ürün bulunamadı." };
@@ -150,7 +161,7 @@ export async function mergeCartItem(
 
   if (nextQuantity > size.currentStock) {
     return {
-      error: `En fazla ${size.currentStock} adet ekleyebilirsiniz.`,
+      error: "Bu beden için yeterli stok yok.",
     };
   }
 
@@ -171,12 +182,7 @@ export async function updateCartItemQuantity(
   quantity: number,
 ): Promise<{ error?: string }> {
   const current = await readCartCookie();
-  const size = await prisma.productSize.findFirst({
-    where: {
-      id: productSizeId,
-      product: { isPublished: true },
-    },
-  });
+  const size = await findPublishedSize(productSizeId);
 
   if (!size) {
     return { error: "Ürün bulunamadı." };
@@ -190,7 +196,7 @@ export async function updateCartItemQuantity(
   }
 
   if (quantity > size.currentStock) {
-    return { error: `En fazla ${size.currentStock} adet seçebilirsiniz.` };
+    return { error: "Bu beden için yeterli stok yok." };
   }
 
   const exists = current.some((item) => item.productSizeId === productSizeId);

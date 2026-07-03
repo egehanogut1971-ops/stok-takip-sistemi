@@ -4,11 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { MOVEMENT_TYPES } from "@/lib/constants";
 import { applyStockMovement } from "@/lib/stock";
 import { getStockRows } from "@/lib/stockRows";
-import {
-  parseImageUrls,
-  resolveProductSlug,
-  syncProductImages,
-} from "@/lib/productHelpers";
+import { resolveProductSlug } from "@/lib/productHelpers";
 import { isStaff } from "@/lib/roles";
 
 type SizeInput = {
@@ -52,7 +48,11 @@ export async function GET(request: Request) {
           }
         : {}),
     },
-    include: { category: true, sizes: { orderBy: { size: "asc" } }, images: { orderBy: { sortOrder: "asc" } } },
+    include: {
+      category: true,
+      sizes: { orderBy: { size: "asc" } },
+      shopListing: true,
+    },
     orderBy: { name: "asc" },
   });
 
@@ -80,14 +80,7 @@ export async function POST(request: Request) {
     const name = String(body.name ?? "").trim();
     const categoryId = String(body.categoryId ?? "");
     const costPrice = Number(body.costPrice ?? 0);
-    const salePrice = Number(body.salePrice ?? 0);
     const sku = body.sku ? String(body.sku).trim() : null;
-    const description = body.description
-      ? String(body.description).trim()
-      : null;
-    const isPublished = Boolean(body.isPublished);
-    const slugInput = body.slug ? String(body.slug).trim() : "";
-    const imageUrls = parseImageUrls(body.images);
     const sizes = parseSizes(body.sizes);
 
     if (!name || !categoryId) {
@@ -119,9 +112,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (costPrice < 0 || salePrice < 0) {
+    if (costPrice < 0) {
       return NextResponse.json(
-        { error: "Fiyat değerleri negatif olamaz." },
+        { error: "Maliyet fiyatı negatif olamaz." },
         { status: 400 },
       );
     }
@@ -135,20 +128,17 @@ export async function POST(request: Request) {
       }
     }
 
-    const slug = slugInput
-      ? await resolveProductSlug(slugInput)
-      : await resolveProductSlug(name);
+    const slug = await resolveProductSlug(name);
 
     const product = await prisma.product.create({
       data: {
         name,
         categoryId,
         costPrice,
-        salePrice,
+        salePrice: 0,
         sku,
-        description,
         slug,
-        isPublished,
+        isPublished: false,
         sizes: {
           create: sizes.map((s) => ({
             size: s.size,
@@ -157,10 +147,12 @@ export async function POST(request: Request) {
           })),
         },
       },
-      include: { category: true, sizes: { orderBy: { size: "asc" } }, images: { orderBy: { sortOrder: "asc" } } },
+      include: {
+        category: true,
+        sizes: { orderBy: { size: "asc" } },
+        shopListing: true,
+      },
     });
-
-    await syncProductImages(product.id, imageUrls);
 
     for (const input of sizes) {
       if ((input.initialStock ?? 0) > 0) {
@@ -179,7 +171,11 @@ export async function POST(request: Request) {
 
     const updated = await prisma.product.findUnique({
       where: { id: product.id },
-      include: { category: true, sizes: { orderBy: { size: "asc" } }, images: { orderBy: { sortOrder: "asc" } } },
+      include: {
+        category: true,
+        sizes: { orderBy: { size: "asc" } },
+        shopListing: true,
+      },
     });
 
     return NextResponse.json(updated, { status: 201 });

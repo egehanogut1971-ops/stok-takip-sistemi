@@ -7,16 +7,91 @@
   --primary-dark: #047857;
 }
 
+.shop-theme {
+  --shop-canvas: #f9f9fb;
+  --shop-surface: #ffffff;
+  --shop-surface-muted: #f4f4f6;
+  --shop-text-primary: #1a1a1e;
+  --shop-text-secondary: #2d2d32;
+  --shop-text-muted: #6b7280;
+  --shop-text-faint: #9ca3af;
+  --shop-border: rgba(0, 0, 0, 0.05);
+  --shop-accent: #2f5d50;
+  --shop-accent-hover: #264a40;
+  --shop-accent-soft: #eef4f1;
+  --shop-success: #3d6b54;
+  --shop-warning: #9a7b4f;
+  --shop-error: #8b4545;
+  --shop-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --shop-duration: 300ms;
+  --shop-shadow: 0 4px 20px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.01);
+  --shop-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+  --font-shop: var(--font-plus-jakarta);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.shop-theme {
+  background: var(--shop-canvas);
+  color: var(--shop-text-primary);
+  font-family: var(--font-plus-jakarta), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.shop-card {
+  border-radius: 12px;
+  background: var(--shop-surface);
+  box-shadow: var(--shop-shadow);
+}
+
+.shop-input {
+  border-radius: 8px;
+  border: 1px solid var(--shop-border);
+  background: var(--shop-surface);
+  padding: 0.75rem 1rem;
+  color: var(--shop-text-primary);
+  transition: all var(--shop-duration) var(--shop-ease);
+}
+
+.shop-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--shop-accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--shop-accent) 40%, transparent);
+}
+
+.shop-btn-primary {
+  border-radius: 9999px;
+  background: var(--shop-accent);
+  color: white;
+  font-weight: 600;
+  transition: all var(--shop-duration) var(--shop-ease);
+}
+
+.shop-btn-primary:hover {
+  background: var(--shop-accent-hover);
+  transform: translateY(-1px);
+}
+
+.shop-btn-secondary {
+  border-radius: 8px;
+  border: 1px solid var(--shop-border);
+  background: var(--shop-surface);
+  color: var(--shop-text-secondary);
+  font-weight: 500;
+  transition: all var(--shop-duration) var(--shop-ease);
+}
+
+.shop-btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shop-shadow);
 }
 
 @media print {

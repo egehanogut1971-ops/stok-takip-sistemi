@@ -16,7 +16,7 @@ export function CartLink() {
   return (
     <Link
       href="/magaza/sepet"
-      className="relative flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-emerald-500 hover:text-emerald-700"
+      className="relative flex items-center gap-1.5 rounded-full border border-[var(--shop-border)] px-3 py-2 text-sm font-medium text-[var(--shop-text-secondary)] transition hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)]"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -34,7 +34,7 @@ export function CartLink() {
       </svg>
       <span className="hidden sm:inline">Sepet</span>
       {count > 0 && (
-        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-xs font-bold text-white">
+        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--shop-accent)] px-1 text-xs font-bold text-white">
           {count}
         </span>
       )}

@@ -5,7 +5,7 @@ export function ShopFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-slate-200 bg-slate-900 text-slate-300">
+    <footer className="mt-auto border-t border-[var(--shop-border)] bg-[var(--shop-text-primary)] text-white/70">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 lg:grid-cols-3 lg:px-8">
         <div>
           <p className="text-lg font-bold text-white">{getShopName()}</p>

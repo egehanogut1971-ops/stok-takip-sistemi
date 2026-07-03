@@ -3,7 +3,7 @@ import { HeroSection } from "@/components/shop/HeroSection";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { CategoryNav } from "@/components/shop/CategoryNav";
 import {
-  getPublishedProducts,
+  getPublishedListings,
   getShopCategories,
 } from "@/lib/shop";
 
@@ -17,8 +17,8 @@ export default async function MagazaPage({ searchParams }: PageProps) {
   const categoryId = params.kategori;
   const showHero = !q && !categoryId;
 
-  const [products, categories] = await Promise.all([
-    getPublishedProducts({ q, categoryId }),
+  const [listings, categories] = await Promise.all([
+    getPublishedListings({ q, categoryId }),
     getShopCategories(),
   ]);
 
@@ -37,8 +37,8 @@ export default async function MagazaPage({ searchParams }: PageProps) {
             <h2 className="text-2xl font-bold text-slate-900">
               {q ? `"${q}" arama sonuçları` : "Tüm Ürünler"}
             </h2>
-            <p className="mt-1 text-slate-600">
-              {products.length} ürün listeleniyor
+            <p className="mt-1 text-[var(--shop-text-muted)]">
+              {listings.length} ürün listeleniyor
             </p>
           </div>
           <form action="/magaza" method="get" className="flex gap-2 md:hidden">
@@ -57,18 +57,17 @@ export default async function MagazaPage({ searchParams }: PageProps) {
           </form>
         </div>
 
-        {products.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-16 text-center">
-            <p className="text-lg text-slate-600">Henüz yayında ürün yok.</p>
-            <p className="mt-2 text-sm text-slate-500">
-              Yönetim panelinden ürün ekleyip &quot;Mağazada yayınla&quot;
-              işaretleyin.
+        {listings.length === 0 ? (
+          <div className="shop-card border border-dashed border-[var(--shop-border)] p-16 text-center">
+            <p className="text-lg text-[var(--shop-text-muted)]">Henüz yayında ürün yok.</p>
+            <p className="mt-2 text-sm text-[var(--shop-text-faint)]">
+              Stok panelinden ürün ekleyin, ardından Mağaza Yönetimi&apos;nden vitrine çıkarın.
             </p>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {listings.map((listing) => (
+              <ProductCard key={listing.id} listing={listing} />
             ))}
           </div>
         )}

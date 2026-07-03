@@ -5,11 +5,16 @@ function isShopRoute(pathname: string) {
   return pathname.startsWith("/magaza");
 }
 
+function isShopAdminRoute(pathname: string) {
+  return pathname.startsWith("/magaza/yonetim");
+}
+
 function isAuthPage(pathname: string) {
   return pathname.startsWith("/login") || pathname.startsWith("/kayit");
 }
 
 function isPublicApi(pathname: string) {
+  if (pathname.startsWith("/api/shop/listings")) return false;
   return (
     pathname.startsWith("/api/auth") || pathname.startsWith("/api/shop")
   );
@@ -30,6 +35,13 @@ export const authConfig = {
       const role = auth?.user?.role ?? ROLES.STAFF;
 
       if (isPublicApi(pathname)) return true;
+
+      if (isShopAdminRoute(pathname)) {
+        if (!isLoggedIn || !isStaff(role)) {
+          return Response.redirect(new URL("/login", nextUrl));
+        }
+        return true;
+      }
 
       if (isShopRoute(pathname)) return true;
 

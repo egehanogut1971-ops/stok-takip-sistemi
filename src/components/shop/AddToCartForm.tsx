@@ -18,6 +18,7 @@ export function AddToCartForm({
 }) {
   const router = useRouter();
   const availableSizes = sizes.filter((size) => size.currentStock > 0);
+  const allSizes = sizes;
   const [productSizeId, setProductSizeId] = useState(
     availableSizes[0]?.id ?? "",
   );
@@ -53,41 +54,48 @@ export function AddToCartForm({
 
   if (availableSizes.length === 0 || disabled) {
     return (
-      <div className="rounded-2xl bg-red-50 p-5 text-sm text-red-700 ring-1 ring-red-100">
+      <div className="shop-card p-5 text-sm text-[var(--shop-text-muted)]">
         Bu ürün şu an sepete eklenemez.
       </div>
     );
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl bg-white p-6 ring-1 ring-slate-200"
-    >
-      <h2 className="font-semibold text-slate-900">Sepete Ekle</h2>
+    <form onSubmit={handleSubmit} className="shop-card p-6">
+      <h2 className="font-semibold text-[var(--shop-text-primary)]">Sepete Ekle</h2>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {availableSizes.map((size) => (
-          <button
-            key={size.id}
-            type="button"
-            onClick={() => {
-              setProductSizeId(size.id);
-              setQuantity(1);
-            }}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              productSizeId === size.id
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
-          >
-            {size.size}
-          </button>
-        ))}
+        {allSizes.map((size) => {
+          const outOfStock = size.currentStock <= 0;
+          const selected = productSizeId === size.id;
+          return (
+            <button
+              key={size.id}
+              type="button"
+              disabled={outOfStock}
+              onClick={() => {
+                if (outOfStock) return;
+                setProductSizeId(size.id);
+                setQuantity(1);
+              }}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                outOfStock
+                  ? "cursor-not-allowed bg-[var(--shop-surface-muted)] text-[var(--shop-text-faint)] line-through opacity-50"
+                  : selected
+                    ? "bg-[var(--shop-accent)] text-white"
+                    : "bg-[var(--shop-accent-soft)] text-[var(--shop-text-secondary)] hover:bg-[var(--shop-accent-soft)]"
+              }`}
+            >
+              {size.size}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-4 flex items-center gap-4">
-        <label className="text-sm font-medium text-slate-700">Adet</label>
+        <label className="text-sm font-medium text-[var(--shop-text-secondary)]">
+          Adet
+        </label>
         <input
           type="number"
           min={1}
@@ -98,17 +106,18 @@ export function AddToCartForm({
               Math.min(maxQuantity, Math.max(1, Number(e.target.value) || 1)),
             )
           }
-          className="w-20 rounded-lg border border-slate-200 px-3 py-2 text-center"
+          className="shop-input w-20 text-center"
         />
-        <span className="text-xs text-slate-500">Max {maxQuantity}</span>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-3 text-sm text-[var(--shop-error)]">{error}</p>
+      )}
 
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 w-full rounded-full bg-emerald-600 py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+        className="shop-btn-primary mt-6 w-full py-3.5 text-sm disabled:opacity-60"
       >
         {loading ? "Ekleniyor..." : "Sepete Ekle"}
       </button>

@@ -38,8 +38,45 @@ model Product {
   category    Category       @relation(fields: [categoryId], references: [id])
   sizes       ProductSize[]
   images      ProductImage[]
+  shopListing ShopListing?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+}
+
+model ShopListing {
+  id          String              @id @default(cuid())
+  productId   String              @unique
+  product     Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  displayName String
+  slug        String              @unique
+  salePrice   Float
+  description String?
+  sizeChart   String?
+  isPublished Boolean             @default(false)
+  images      ShopListingImage[]
+  reviews     ShopReview[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model ShopListingImage {
+  id        String      @id @default(cuid())
+  listingId String
+  url       String
+  sortOrder Int         @default(0)
+  listing   ShopListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+}
+
+model ShopReview {
+  id         String      @id @default(cuid())
+  listingId  String
+  listing    ShopListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  authorName String
+  rating     Int
+  text       String
+  sortOrder  Int         @default(0)
+  createdAt  DateTime    @default(now())
 }
 
 model ProductImage {

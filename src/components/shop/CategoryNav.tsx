@@ -17,8 +17,8 @@ export function CategoryNav({
         href="/magaza"
         className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
           !activeId
-            ? "bg-emerald-600 text-white"
-            : "bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-emerald-300"
+            ? "bg-[var(--shop-accent)] text-white"
+            : "bg-[var(--shop-surface)] text-[var(--shop-text-secondary)] ring-1 ring-[var(--shop-border)] hover:ring-[var(--shop-accent)]"
         }`}
       >
         Tümü
@@ -29,8 +29,8 @@ export function CategoryNav({
           href={`/magaza?kategori=${cat.id}`}
           className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
             activeId === cat.id
-              ? "bg-emerald-600 text-white"
-              : "bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-emerald-300"
+              ? "bg-[var(--shop-accent)] text-white"
+              : "bg-[var(--shop-surface)] text-[var(--shop-text-secondary)] ring-1 ring-[var(--shop-border)] hover:ring-[var(--shop-accent)]"
           }`}
         >
           {cat.name}

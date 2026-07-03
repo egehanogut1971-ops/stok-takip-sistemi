@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ProfitPreview } from "@/components/ProfitPreview";
 import { SIZES } from "@/lib/constants";
-import { formatCurrency, formatPercent, calcProfit } from "@/lib/profit";
+import { formatCurrency } from "@/lib/profit";
 
 type Category = { id: string; name: string };
 
@@ -15,18 +14,20 @@ type ProductSize = {
   minStock: number;
 };
 
+type ShopListing = {
+  id: string;
+  isPublished: boolean;
+  slug: string;
+};
+
 type Product = {
   id: string;
   name: string;
   sku: string | null;
-  description: string | null;
-  slug: string;
-  isPublished: boolean;
   costPrice: number;
-  salePrice: number;
   category: Category;
   sizes: ProductSize[];
-  images: { id: string; url: string; sortOrder: number }[];
+  shopListing: ShopListing | null;
 };
 
 type SizeFormRow = {
@@ -42,11 +43,6 @@ const emptyForm = {
   sku: "",
   categoryId: "",
   costPrice: "",
-  salePrice: "",
-  description: "",
-  slug: "",
-  isPublished: false,
-  imageUrls: "",
 };
 
 function defaultSizeRow(): SizeFormRow {
@@ -94,11 +90,6 @@ export default function ProductsPage() {
       sku: product.sku ?? "",
       categoryId: product.category.id,
       costPrice: String(product.costPrice),
-      salePrice: String(product.salePrice),
-      description: product.description ?? "",
-      slug: product.slug,
-      isPublished: product.isPublished,
-      imageUrls: product.images.map((img) => img.url).join("\n"),
     });
     setSizeRows(
       product.sizes.map((s) => {
@@ -147,8 +138,7 @@ export default function ProductsPage() {
       minStock: Number(row.minStock),
     }));
 
-    const emptySize = sizes.find((s) => !s.size);
-    if (emptySize) {
+    if (sizes.find((s) => !s.size)) {
       setError("Tüm beden alanları doldurulmalıdır.");
       return;
     }
@@ -164,14 +154,6 @@ export default function ProductsPage() {
       sku: form.sku || null,
       categoryId: form.categoryId,
       costPrice: Number(form.costPrice),
-      salePrice: Number(form.salePrice),
-      description: form.description || null,
-      slug: form.slug || undefined,
-      isPublished: form.isPublished,
-      images: form.imageUrls
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
       sizes,
     };
 
@@ -187,7 +169,7 @@ export default function ProductsPage() {
       return;
     }
 
-    setSuccess(editId ? "Ürün güncellendi." : "Ürün eklendi.");
+    setSuccess(editId ? "Stok ürünü güncellendi." : "Stok ürünü eklendi.");
     resetForm();
     loadData();
     router.refresh();
@@ -240,18 +222,24 @@ export default function ProductsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Ürünler</h1>
-        <p className="mt-1 text-lg text-slate-600">Ürün ekle, düzenle veya CSV ile içe aktar</p>
+        <h1 className="text-3xl font-bold">Stok Ürünleri</h1>
+        <p className="mt-1 text-lg text-slate-600">
+          Envanter kaydı — mağaza vitrini için{" "}
+          <a href="/magaza/yonetim" className="font-medium text-emerald-700 hover:underline">
+            Mağaza Yönetimi
+          </a>
+          ne gidin.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">{editId ? "Ürün Düzenle" : "Yeni Ürün"}</h2>
+        <h2 className="text-xl font-semibold">{editId ? "Stok Ürünü Düzenle" : "Yeni Stok Ürünü"}</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <input
-            placeholder="Ürün adı"
+            placeholder="Ürün adı (iç kullanım — örn. Nike mavi tişört)"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="rounded-lg border px-4 py-3 text-lg"
+            className="rounded-lg border px-4 py-3 text-lg md:col-span-2"
             required
           />
           <select
@@ -274,69 +262,16 @@ export default function ProductsPage() {
           <input
             type="number"
             step="0.01"
-            placeholder="Alış fiyatı"
+            placeholder="Maliyet fiyatı (alış)"
             value={form.costPrice}
             onChange={(e) => setForm({ ...form, costPrice: e.target.value })}
             className="rounded-lg border px-4 py-3 text-lg"
             required
           />
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Satış fiyatı"
-            value={form.salePrice}
-            onChange={(e) => setForm({ ...form, salePrice: e.target.value })}
-            className="rounded-lg border px-4 py-3 text-lg"
-            required
-          />
-          <input
-            placeholder="URL slug (boş bırakılırsa otomatik)"
-            value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            className="rounded-lg border px-4 py-3 text-lg md:col-span-2"
-          />
         </div>
-
-        <textarea
-          placeholder="Mağaza açıklaması"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          rows={4}
-          className="w-full rounded-lg border px-4 py-3 text-lg"
-        />
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            Ürün fotoğrafları (her satıra bir URL)
-          </label>
-          <textarea
-            placeholder="https://ornek.com/foto1.jpg&#10;https://ornek.com/foto2.jpg"
-            value={form.imageUrls}
-            onChange={(e) => setForm({ ...form, imageUrls: e.target.value })}
-            rows={3}
-            className="w-full rounded-lg border px-4 py-3 font-mono text-sm"
-          />
-        </div>
-
-        <label className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <input
-            type="checkbox"
-            checked={form.isPublished}
-            onChange={(e) =>
-              setForm({ ...form, isPublished: e.target.checked })
-            }
-            className="h-5 w-5"
-          />
-          <span className="font-medium text-emerald-900">Mağazada yayınla</span>
-        </label>
-
-        <ProfitPreview
-          costPrice={Number(form.costPrice) || 0}
-          salePrice={Number(form.salePrice) || 0}
-        />
 
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Bedenler</h3>
+          <h3 className="text-lg font-semibold">Bedenler ve stok</h3>
           <div className="overflow-x-auto rounded-lg border">
             <table className="min-w-full text-base">
               <thead className="bg-slate-50">
@@ -431,7 +366,7 @@ export default function ProductsPage() {
 
         <div className="flex gap-3">
           <button type="submit" className="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white">
-            {editId ? "Güncelle" : "Ekle"}
+            {editId ? "Güncelle" : "Stoka Ekle"}
           </button>
           {editId && (
             <button type="button" onClick={resetForm} className="rounded-lg border px-6 py-3">
@@ -451,7 +386,7 @@ export default function ProductsPage() {
           onChange={(e) => setCsvText(e.target.value)}
           rows={5}
           className="w-full rounded-lg border px-4 py-3 font-mono text-sm"
-          placeholder="ad,kategori,beden,adet,alis,satis,minStok&#10;Tişört,Giyim,S,5,100,150,2&#10;Tişört,Giyim,M,10,100,150,2"
+          placeholder="ad,kategori,beden,adet,alis,satis,minStok&#10;Tişört,Giyim,S,5,100,150,2"
         />
         <button
           onClick={handleImport}
@@ -465,43 +400,52 @@ export default function ProductsPage() {
         <table className="min-w-full text-base">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-4 py-3 text-left">Ürün</th>
+              <th className="px-4 py-3 text-left">Stok adı</th>
               <th className="px-4 py-3 text-left">Mağaza</th>
               <th className="px-4 py-3 text-left">Bedenler</th>
               <th className="px-4 py-3 text-left">Kategori</th>
               <th className="px-4 py-3 text-left">Toplam Stok</th>
-              <th className="px-4 py-3 text-left">Kar</th>
+              <th className="px-4 py-3 text-left">Maliyet</th>
               <th className="px-4 py-3 text-left">İşlem</th>
             </tr>
           </thead>
           <tbody>
             {products.map((p) => {
-              const { unitProfit, margin } = calcProfit(p.salePrice, p.costPrice);
               const totalStock = p.sizes.reduce((s, sz) => s + sz.currentStock, 0);
               const sizeSummary = p.sizes
                 .map((s) => `${s.size}: ${s.currentStock}`)
                 .join(", ");
+              const listing = p.shopListing;
               return (
                 <tr key={p.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{p.name}</td>
                   <td className="px-4 py-3">
-                    {p.isPublished ? (
-                      <a
-                        href={`/magaza/urun/${p.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-emerald-700 hover:underline"
-                      >
-                        Yayında
-                      </a>
+                    {listing ? (
+                      listing.isPublished ? (
+                        <a
+                          href={`/magaza/urun/${listing.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-700 hover:underline"
+                        >
+                          Yayında
+                        </a>
+                      ) : (
+                        <span className="text-amber-600">Taslak</span>
+                      )
                     ) : (
-                      <span className="text-slate-400">Gizli</span>
+                      <a
+                        href="/magaza/yonetim"
+                        className="text-slate-500 hover:text-emerald-700 hover:underline"
+                      >
+                        Mağazaya ekle →
+                      </a>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm">{sizeSummary}</td>
                   <td className="px-4 py-3">{p.category.name}</td>
                   <td className="px-4 py-3">{totalStock} adet</td>
-                  <td className="px-4 py-3">{formatCurrency(unitProfit)} ({formatPercent(margin)})</td>
+                  <td className="px-4 py-3">{formatCurrency(p.costPrice)}</td>
                   <td className="px-4 py-3">
                     <button onClick={() => startEdit(p)} className="mr-2 text-emerald-700 hover:underline">Düzenle</button>
                     <button onClick={() => handleDelete(p.id)} className="text-red-600 hover:underline">Sil</button>

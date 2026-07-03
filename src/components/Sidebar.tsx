@@ -14,6 +14,7 @@ const links = [
   { href: "/hareketler", label: "Hareketler" },
   { href: "/uyarilar", label: "Uyarılar" },
   { href: "/magaza", label: "Mağaza", external: true },
+  { href: "/magaza/yonetim", label: "Mağaza Yönetimi", external: true },
   { href: "/profil", label: "Profil" },
 ];
 

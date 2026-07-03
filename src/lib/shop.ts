@@ -1,60 +1,86 @@
 import { prisma } from "@/lib/prisma";
+import { listingInclude } from "@/lib/listingHelpers";
+import { getTotalStock, isListingInStock } from "@/lib/stockUtils";
 
-export async function getPublishedProducts(options?: {
+export { getTotalStock, isListingInStock };
+
+export async function getPublishedListings(options?: {
   categoryId?: string;
   q?: string;
 }) {
   const { categoryId, q } = options ?? {};
 
-  return prisma.product.findMany({
+  return prisma.shopListing.findMany({
     where: {
       isPublished: true,
-      ...(categoryId ? { categoryId } : {}),
+      ...(categoryId ? { product: { categoryId } } : {}),
       ...(q
         ? {
             OR: [
-              { name: { contains: q, mode: "insensitive" } },
+              { displayName: { contains: q, mode: "insensitive" } },
               { description: { contains: q, mode: "insensitive" } },
             ],
           }
         : {}),
     },
-    include: {
-      category: true,
-      sizes: { orderBy: { size: "asc" } },
-      images: { orderBy: { sortOrder: "asc" } },
-    },
-    orderBy: { name: "asc" },
+    include: listingInclude,
+    orderBy: { displayName: "asc" },
   });
 }
 
-export async function getPublishedProductBySlug(slug: string) {
-  return prisma.product.findFirst({
+export async function getPublishedListingBySlug(slug: string) {
+  return prisma.shopListing.findFirst({
     where: { slug, isPublished: true },
-    include: {
-      category: true,
-      sizes: { orderBy: { size: "asc" } },
-      images: { orderBy: { sortOrder: "asc" } },
-    },
+    include: listingInclude,
   });
 }
 
 export async function getShopCategories() {
   return prisma.category.findMany({
     where: {
-      products: { some: { isPublished: true } },
+      products: {
+        some: {
+          shopListing: { isPublished: true },
+        },
+      },
     },
     orderBy: { name: "asc" },
   });
 }
 
-export function getProductCoverImage(
+export function getListingCoverImage(
   images: { url: string; sortOrder: number }[],
 ): string | null {
   if (images.length === 0) return null;
   return images[0]?.url ?? null;
 }
 
-export function getTotalStock(sizes: { currentStock: number }[]): number {
-  return sizes.reduce((sum, s) => sum + s.currentStock, 0);
+export async function getProductsWithoutListing() {
+  return prisma.product.findMany({
+    where: { shopListing: null },
+    include: {
+      category: true,
+      sizes: { orderBy: { size: "asc" } },
+    },
+    orderBy: { name: "asc" },
+  });
 }
+
+export async function getAllListings() {
+  return prisma.shopListing.findMany({
+    include: listingInclude,
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+export async function getListingById(id: string) {
+  return prisma.shopListing.findUnique({
+    where: { id },
+    include: listingInclude,
+  });
+}
+
+// Backward-compatible aliases used during migration
+export const getPublishedProducts = getPublishedListings;
+export const getPublishedProductBySlug = getPublishedListingBySlug;
+export const getProductCoverImage = getListingCoverImage;

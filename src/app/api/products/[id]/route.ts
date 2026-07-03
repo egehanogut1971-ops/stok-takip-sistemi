@@ -3,11 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MOVEMENT_TYPES } from "@/lib/constants";
 import { applyStockMovement } from "@/lib/stock";
-import {
-  parseImageUrls,
-  resolveProductSlug,
-  syncProductImages,
-} from "@/lib/productHelpers";
+import { resolveProductSlug } from "@/lib/productHelpers";
 import { isStaff } from "@/lib/roles";
 
 type Params = { params: Promise<{ id: string }> };
@@ -31,7 +27,7 @@ export async function GET(_request: Request, { params }: Params) {
     include: {
       category: true,
       sizes: { orderBy: { size: "asc" } },
-      images: { orderBy: { sortOrder: "asc" } },
+      shopListing: true,
     },
   });
 
@@ -55,14 +51,7 @@ export async function PUT(request: Request, { params }: Params) {
     const name = String(body.name ?? "").trim();
     const categoryId = String(body.categoryId ?? "");
     const costPrice = Number(body.costPrice ?? 0);
-    const salePrice = Number(body.salePrice ?? 0);
     const sku = body.sku ? String(body.sku).trim() : null;
-    const description = body.description
-      ? String(body.description).trim()
-      : null;
-    const isPublished = Boolean(body.isPublished);
-    const slugInput = body.slug ? String(body.slug).trim() : "";
-    const imageUrls = parseImageUrls(body.images);
     const sizes: SizeUpdate[] = Array.isArray(body.sizes)
       ? body.sizes.map((s: SizeUpdate) => ({
           id: s.id ? String(s.id) : undefined,
@@ -110,9 +99,7 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
     }
 
-    const slug = slugInput
-      ? await resolveProductSlug(slugInput, id)
-      : await resolveProductSlug(name, id);
+    const slug = await resolveProductSlug(name, id);
 
     await prisma.product.update({
       where: { id },
@@ -120,15 +107,10 @@ export async function PUT(request: Request, { params }: Params) {
         name,
         categoryId,
         costPrice,
-        salePrice,
         sku,
-        description,
         slug,
-        isPublished,
       },
     });
-
-    await syncProductImages(id, imageUrls);
 
     const keptIds = new Set(
       sizes.filter((s) => s.id).map((s) => s.id as string),
@@ -179,7 +161,7 @@ export async function PUT(request: Request, { params }: Params) {
       include: {
         category: true,
         sizes: { orderBy: { size: "asc" } },
-        images: { orderBy: { sortOrder: "asc" } },
+        shopListing: true,
       },
     });
 
