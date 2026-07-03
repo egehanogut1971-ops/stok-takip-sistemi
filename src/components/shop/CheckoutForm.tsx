@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import { formatCurrency } from "@/lib/profit";
 import Link from "next/link";
 
-export function CheckoutForm() {
+type CheckoutFormProps = {
+  paymentEnabled?: boolean;
+};
+
+export function CheckoutForm({ paymentEnabled = true }: CheckoutFormProps) {
   const router = useRouter();
   const [subtotal, setSubtotal] = useState(0);
   const [shippingCost, setShippingCost] = useState(0);
@@ -75,7 +79,11 @@ export function CheckoutForm() {
       return;
     }
 
-    router.push(`/magaza/odeme/${data.orderNumber}`);
+    if (data.paymentEnabled === false) {
+      router.push(`/magaza/siparis/${data.orderNumber}`);
+    } else {
+      router.push(`/magaza/odeme/${data.orderNumber}`);
+    }
     router.refresh();
   }
 
@@ -187,8 +195,9 @@ export function CheckoutForm() {
         </div>
 
         <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
-          Sonraki adımda iyzico ile güvenli kart ödemesi yapılır. Ödeme
-          onaylandığında stok otomatik düşer.
+          {paymentEnabled
+            ? "Sonraki adımda iyzico ile güvenli kart ödemesi yapılır. Ödeme onaylandığında stok otomatik düşer."
+            : "Siparişiniz kaydedilir ve stok otomatik düşer. Ödeme entegrasyonu daha sonra eklenecek."}
         </p>
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
@@ -198,7 +207,11 @@ export function CheckoutForm() {
           disabled={submitting}
           className="mt-6 w-full rounded-full bg-emerald-600 py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
         >
-          {submitting ? "Hazırlanıyor..." : "Ödemeye Geç"}
+          {submitting
+            ? "Hazırlanıyor..."
+            : paymentEnabled
+              ? "Ödemeye Geç"
+              : "Siparişi Tamamla"}
         </button>
       </aside>
     </form>

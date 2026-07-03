@@ -17,7 +17,7 @@ type CartLine = {
   imageUrl: string | null;
 };
 
-export function CartView() {
+export function CartView({ paymentEnabled = true }: { paymentEnabled?: boolean }) {
   const router = useRouter();
   const [items, setItems] = useState<CartLine[]>([]);
   const [subtotal, setSubtotal] = useState(0);
@@ -184,7 +184,7 @@ export function CartView() {
           href="/magaza/odeme"
           className="mt-6 block rounded-full bg-emerald-600 px-6 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
         >
-          Ödemeye Geç
+          {paymentEnabled ? "Ödemeye Geç" : "Sipariş Ver"}
         </Link>
       </aside>
     </div>

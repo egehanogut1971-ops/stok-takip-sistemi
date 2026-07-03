@@ -1,17 +1,26 @@
 import Link from "next/link";
 
-const steps = [
+const allSteps = [
   { label: "Sepet", href: "/magaza/sepet" },
   { label: "Bilgiler", href: "/magaza/odeme" },
   { label: "Ödeme", href: "/magaza/odeme" },
 ];
 
-export function CheckoutSteps({ current }: { current: 1 | 2 | 3 }) {
+export function CheckoutSteps({
+  current,
+  paymentEnabled = true,
+}: {
+  current: 1 | 2 | 3;
+  paymentEnabled?: boolean;
+}) {
+  const steps = paymentEnabled ? allSteps : allSteps.slice(0, 2);
+  const maxStep = steps.length;
+
   return (
     <ol className="flex items-center justify-center gap-2 text-sm sm:gap-4">
       {steps.map((step, index) => {
-        const stepNum = (index + 1) as 1 | 2 | 3;
-        const active = stepNum === current;
+        const stepNum = index + 1;
+        const active = stepNum === current || (current > maxStep && stepNum === maxStep);
         const done = stepNum < current;
 
         return (

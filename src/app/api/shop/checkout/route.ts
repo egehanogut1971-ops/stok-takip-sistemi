@@ -6,6 +6,7 @@ import {
   getResolvedCart,
   syncCartWithStock,
 } from "@/lib/cart";
+import { fulfillOrder } from "@/lib/fulfillOrder";
 import {
   calcOrderTotals,
   generateOrderNumber,
@@ -13,6 +14,7 @@ import {
   type ShippingAddress,
 } from "@/lib/orders";
 import { ROLES } from "@/lib/roles";
+import { isPaymentEnabled } from "@/lib/shopConfig";
 
 function parseAddress(body: unknown): ShippingAddress | null {
   if (!body || typeof body !== "object") return null;
@@ -106,11 +108,17 @@ export async function POST(request: Request) {
 
         await clearCartCookie();
 
+        const paymentEnabled = isPaymentEnabled();
+        if (!paymentEnabled) {
+          await fulfillOrder(order.id);
+        }
+
         return NextResponse.json(
           {
             orderNumber: order.orderNumber,
             total: order.total,
-            status: order.status,
+            status: paymentEnabled ? order.status : ORDER_STATUS.ODENDI,
+            paymentEnabled,
           },
           { status: 201 },
         );

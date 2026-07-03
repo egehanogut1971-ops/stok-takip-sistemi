@@ -36,7 +36,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
             isPaid ? "text-emerald-900" : "text-amber-900"
           }`}
         >
-          {isPaid ? "Ödemeniz alındı!" : "Sipariş kaydedildi"}
+          {isPaid ? "Siparişiniz alındı!" : "Sipariş kaydedildi"}
         </h1>
         <p
           className={`mt-2 ${isPaid ? "text-emerald-800" : "text-amber-800"}`}
