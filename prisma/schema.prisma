@@ -24,29 +24,40 @@ model Category {
 }
 
 model Product {
+  id         String        @id @default(cuid())
+  name       String
+  sku        String?
+  costPrice  Float
+  salePrice  Float
+  categoryId String
+  category   Category      @relation(fields: [categoryId], references: [id])
+  sizes      ProductSize[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model ProductSize {
   id           String          @id @default(cuid())
-  name         String
-  sku          String?
-  unit         String          @default("adet")
-  costPrice    Float
-  salePrice    Float
-  minStock     Int             @default(0)
+  productId    String
+  size         String
   currentStock Int             @default(0)
-  categoryId   String
-  category     Category        @relation(fields: [categoryId], references: [id])
+  minStock     Int             @default(0)
+  product      Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   movements    StockMovement[]
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+
+  @@unique([productId, size])
 }
 
 model StockMovement {
-  id        String   @id @default(cuid())
-  type      String
-  quantity  Int
-  note      String?
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  id            String      @id @default(cuid())
+  type          String
+  quantity      Int
+  note          String?
+  productSizeId String
+  productSize   ProductSize @relation(fields: [productSizeId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  createdAt     DateTime    @default(now())
 }

@@ -9,11 +9,12 @@ import {
   STOCK_STATUS_LABELS,
 } from "@/lib/profit";
 
-export type ProductRow = {
-  id: string;
+export type StockRow = {
+  productSizeId: string;
+  productId: string;
   name: string;
+  size: string;
   sku: string | null;
-  unit: string;
   costPrice: number;
   salePrice: number;
   minStock: number;
@@ -21,8 +22,8 @@ export type ProductRow = {
   category: { id: string; name: string };
 };
 
-export function StockTable({ products }: { products: ProductRow[] }) {
-  if (products.length === 0) {
+export function StockTable({ rows }: { rows: StockRow[] }) {
+  if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-lg text-slate-500">
         Gösterilecek ürün yok.
@@ -36,6 +37,7 @@ export function StockTable({ products }: { products: ProductRow[] }) {
         <thead className="bg-slate-50 text-sm uppercase tracking-wide text-slate-600">
           <tr>
             <th className="px-4 py-3">Ürün</th>
+            <th className="px-4 py-3">Beden</th>
             <th className="px-4 py-3">Kategori</th>
             <th className="px-4 py-3">Stok</th>
             <th className="px-4 py-3">Alış</th>
@@ -46,25 +48,23 @@ export function StockTable({ products }: { products: ProductRow[] }) {
           </tr>
         </thead>
         <tbody>
-          {products.map((product) => {
+          {rows.map((row) => {
             const { unitProfit, margin } = calcProfit(
-              product.salePrice,
-              product.costPrice,
+              row.salePrice,
+              row.costPrice,
             );
-            const status = getStockStatus(
-              product.currentStock,
-              product.minStock,
-            );
+            const status = getStockStatus(row.currentStock, row.minStock);
 
             return (
-              <tr key={product.id} className="border-t border-slate-100">
-                <td className="px-4 py-3 font-medium">{product.name}</td>
-                <td className="px-4 py-3">{product.category.name}</td>
+              <tr key={row.productSizeId} className="border-t border-slate-100">
+                <td className="px-4 py-3 font-medium">{row.name}</td>
+                <td className="px-4 py-3">{row.size}</td>
+                <td className="px-4 py-3">{row.category.name}</td>
                 <td className="px-4 py-3 font-semibold">
-                  {product.currentStock} {product.unit}
+                  {row.currentStock} adet
                 </td>
-                <td className="px-4 py-3">{formatCurrency(product.costPrice)}</td>
-                <td className="px-4 py-3">{formatCurrency(product.salePrice)}</td>
+                <td className="px-4 py-3">{formatCurrency(row.costPrice)}</td>
+                <td className="px-4 py-3">{formatCurrency(row.salePrice)}</td>
                 <td className="px-4 py-3">{formatCurrency(unitProfit)}</td>
                 <td className="px-4 py-3">{formatPercent(margin)}</td>
                 <td className="px-4 py-3">
@@ -83,19 +83,20 @@ export function StockTable({ products }: { products: ProductRow[] }) {
   );
 }
 
-export function StockSummary({ products }: { products: ProductRow[] }) {
-  const totalItems = products.reduce((sum, p) => sum + p.currentStock, 0);
-  const totalValue = products.reduce(
-    (sum, p) => sum + p.currentStock * p.costPrice,
+export function StockSummary({ rows }: { rows: StockRow[] }) {
+  const totalItems = rows.reduce((sum, r) => sum + r.currentStock, 0);
+  const totalValue = rows.reduce(
+    (sum, r) => sum + r.currentStock * r.costPrice,
     0,
   );
+  const uniqueProducts = new Set(rows.map((r) => r.productId)).size;
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <p className="text-sm text-slate-500">Ürün Çeşidi</p>
         <p className="mt-1 text-3xl font-bold text-slate-900">
-          {products.length}
+          {uniqueProducts}
         </p>
       </div>
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

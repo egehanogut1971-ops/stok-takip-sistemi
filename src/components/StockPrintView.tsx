@@ -8,13 +8,13 @@ import {
   formatCurrency,
   formatPercent,
 } from "@/lib/profit";
-import type { ProductRow } from "@/components/StockTable";
+import type { StockRow } from "@/components/StockTable";
 
 export function StockPrintActions({
-  products,
+  rows,
   categoryName,
 }: {
-  products: ProductRow[];
+  rows: StockRow[];
   categoryName?: string;
 }) {
   const printRef = useRef<HTMLDivElement>(null);
@@ -40,6 +40,7 @@ export function StockPrintActions({
       head: [
         [
           "Ürün",
+          "Beden",
           "Kategori",
           "Stok",
           "Alış",
@@ -48,14 +49,15 @@ export function StockPrintActions({
           "Marj",
         ],
       ],
-      body: products.map((p) => {
-        const { unitProfit, margin } = calcProfit(p.salePrice, p.costPrice);
+      body: rows.map((r) => {
+        const { unitProfit, margin } = calcProfit(r.salePrice, r.costPrice);
         return [
-          p.name,
-          p.category.name,
-          `${p.currentStock} ${p.unit}`,
-          formatCurrency(p.costPrice),
-          formatCurrency(p.salePrice),
+          r.name,
+          r.size,
+          r.category.name,
+          `${r.currentStock} adet`,
+          formatCurrency(r.costPrice),
+          formatCurrency(r.salePrice),
           formatCurrency(unitProfit),
           formatPercent(margin),
         ];
@@ -67,11 +69,12 @@ export function StockPrintActions({
     doc.save(fileName);
   }
 
-  const totalItems = products.reduce((sum, p) => sum + p.currentStock, 0);
-  const totalValue = products.reduce(
-    (sum, p) => sum + p.currentStock * p.costPrice,
+  const totalItems = rows.reduce((sum, r) => sum + r.currentStock, 0);
+  const totalValue = rows.reduce(
+    (sum, r) => sum + r.currentStock * r.costPrice,
     0,
   );
+  const uniqueProducts = new Set(rows.map((r) => r.productId)).size;
 
   return (
     <div>
@@ -102,6 +105,7 @@ export function StockPrintActions({
           <thead>
             <tr className="border-b">
               <th className="p-2 text-left">Ürün</th>
+              <th className="p-2 text-left">Beden</th>
               <th className="p-2 text-left">Kategori</th>
               <th className="p-2 text-left">Stok</th>
               <th className="p-2 text-left">Alış</th>
@@ -111,20 +115,19 @@ export function StockPrintActions({
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => {
+            {rows.map((r) => {
               const { unitProfit, margin } = calcProfit(
-                p.salePrice,
-                p.costPrice,
+                r.salePrice,
+                r.costPrice,
               );
               return (
-                <tr key={p.id} className="border-b">
-                  <td className="p-2">{p.name}</td>
-                  <td className="p-2">{p.category.name}</td>
-                  <td className="p-2">
-                    {p.currentStock} {p.unit}
-                  </td>
-                  <td className="p-2">{formatCurrency(p.costPrice)}</td>
-                  <td className="p-2">{formatCurrency(p.salePrice)}</td>
+                <tr key={r.productSizeId} className="border-b">
+                  <td className="p-2">{r.name}</td>
+                  <td className="p-2">{r.size}</td>
+                  <td className="p-2">{r.category.name}</td>
+                  <td className="p-2">{r.currentStock} adet</td>
+                  <td className="p-2">{formatCurrency(r.costPrice)}</td>
+                  <td className="p-2">{formatCurrency(r.salePrice)}</td>
                   <td className="p-2">{formatCurrency(unitProfit)}</td>
                   <td className="p-2">{formatPercent(margin)}</td>
                 </tr>
@@ -133,7 +136,7 @@ export function StockPrintActions({
           </tbody>
         </table>
         <div className="mt-4 text-sm">
-          <p>Toplam ürün çeşidi: {products.length}</p>
+          <p>Toplam ürün çeşidi: {uniqueProducts}</p>
           <p>Toplam adet: {totalItems}</p>
           <p>Toplam stok değeri: {formatCurrency(totalValue)}</p>
         </div>

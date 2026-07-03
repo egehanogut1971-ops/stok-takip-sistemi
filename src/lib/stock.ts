@@ -2,13 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { MOVEMENT_TYPES, type MovementType } from "@/lib/constants";
 
 export async function applyStockMovement({
-  productId,
+  productSizeId,
   userId,
   type,
   quantity,
   note,
 }: {
-  productId: string;
+  productSizeId: string;
   userId: string;
   type: MovementType;
   quantity: number;
@@ -19,9 +19,12 @@ export async function applyStockMovement({
   }
 
   return prisma.$transaction(async (tx) => {
-    const product = await tx.product.findUnique({ where: { id: productId } });
-    if (!product) {
-      throw new Error("Ürün bulunamadı.");
+    const productSize = await tx.productSize.findUnique({
+      where: { id: productSizeId },
+      include: { product: { include: { category: true } } },
+    });
+    if (!productSize) {
+      throw new Error("Beden bulunamadı.");
     }
 
     let delta = 0;
@@ -29,11 +32,11 @@ export async function applyStockMovement({
       delta = quantity;
     } else if (type === MOVEMENT_TYPES.CIKIS) {
       delta = -quantity;
-      if (product.currentStock - quantity < 0) {
+      if (productSize.currentStock - quantity < 0) {
         throw new Error("Stok yetersiz.");
       }
     } else if (type === MOVEMENT_TYPES.DUZELTME) {
-      delta = quantity - product.currentStock;
+      delta = quantity - productSize.currentStock;
       if (quantity < 0) {
         throw new Error("Geçersiz stok miktarı.");
       }
@@ -41,7 +44,7 @@ export async function applyStockMovement({
 
     const movement = await tx.stockMovement.create({
       data: {
-        productId,
+        productSizeId,
         userId,
         type,
         quantity: type === MOVEMENT_TYPES.DUZELTME ? Math.abs(delta) : quantity,
@@ -49,17 +52,17 @@ export async function applyStockMovement({
       },
     });
 
-    const updatedProduct = await tx.product.update({
-      where: { id: productId },
+    const updatedSize = await tx.productSize.update({
+      where: { id: productSizeId },
       data: {
         currentStock:
           type === MOVEMENT_TYPES.DUZELTME
             ? quantity
-            : product.currentStock + delta,
+            : productSize.currentStock + delta,
       },
-      include: { category: true },
+      include: { product: { include: { category: true } } },
     });
 
-    return { movement, product: updatedProduct };
+    return { movement, productSize: updatedSize };
   });
 }

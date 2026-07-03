@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { MOVEMENT_TYPES } from "@/lib/constants";
+import { applyStockMovement } from "@/lib/stock";
 
 type Params = { params: Promise<{ id: string }> };
+
+type SizeUpdate = {
+  id?: string;
+  size: string;
+  minStock?: number;
+  initialStock?: number;
+};
 
 export async function GET(_request: Request, { params }: Params) {
   const session = await auth();
@@ -13,7 +22,7 @@ export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { category: true },
+    include: { category: true, sizes: { orderBy: { size: "asc" } } },
   });
 
   if (!product) {
@@ -37,9 +46,15 @@ export async function PUT(request: Request, { params }: Params) {
     const categoryId = String(body.categoryId ?? "");
     const costPrice = Number(body.costPrice ?? 0);
     const salePrice = Number(body.salePrice ?? 0);
-    const minStock = Number(body.minStock ?? 0);
-    const unit = String(body.unit ?? "adet");
     const sku = body.sku ? String(body.sku).trim() : null;
+    const sizes: SizeUpdate[] = Array.isArray(body.sizes)
+      ? body.sizes.map((s: SizeUpdate) => ({
+          id: s.id ? String(s.id) : undefined,
+          size: String(s.size ?? "").trim(),
+          minStock: Number(s.minStock ?? 0),
+          initialStock: Number(s.initialStock ?? 0),
+        }))
+      : [];
 
     if (!name || !categoryId) {
       return NextResponse.json(
@@ -48,26 +63,96 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const product = await prisma.product.update({
+    if (sizes.length === 0) {
+      return NextResponse.json(
+        { error: "En az bir beden gerekli." },
+        { status: 400 },
+      );
+    }
+
+    const sizeNames = sizes.map((s) => s.size);
+    if (sizeNames.some((s) => !s)) {
+      return NextResponse.json(
+        { error: "Beden adı boş olamaz." },
+        { status: 400 },
+      );
+    }
+
+    if (new Set(sizeNames).size !== sizeNames.length) {
+      return NextResponse.json(
+        { error: "Aynı beden iki kez eklenemez." },
+        { status: 400 },
+      );
+    }
+
+    const existing = await prisma.product.findUnique({
       where: { id },
-      data: {
-        name,
-        categoryId,
-        costPrice,
-        salePrice,
-        minStock,
-        unit,
-        sku,
-      },
-      include: { category: true },
+      include: { sizes: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
+    }
+
+    await prisma.product.update({
+      where: { id },
+      data: { name, categoryId, costPrice, salePrice, sku },
+    });
+
+    const keptIds = new Set(
+      sizes.filter((s) => s.id).map((s) => s.id as string),
+    );
+
+    for (const old of existing.sizes) {
+      if (!keptIds.has(old.id)) {
+        if (old.currentStock > 0) {
+          return NextResponse.json(
+            { error: `"${old.size}" bedeninde stok varken silinemez.` },
+            { status: 400 },
+          );
+        }
+        await prisma.productSize.delete({ where: { id: old.id } });
+      }
+    }
+
+    for (const input of sizes) {
+      if (input.id) {
+        await prisma.productSize.update({
+          where: { id: input.id },
+          data: { size: input.size, minStock: input.minStock ?? 0 },
+        });
+      } else {
+        const created = await prisma.productSize.create({
+          data: {
+            productId: id,
+            size: input.size,
+            minStock: input.minStock ?? 0,
+            currentStock: 0,
+          },
+        });
+
+        if ((input.initialStock ?? 0) > 0) {
+          await applyStockMovement({
+            productSizeId: created.id,
+            userId: session.user.id,
+            type: MOVEMENT_TYPES.BASLANGIC,
+            quantity: input.initialStock!,
+            note: "Yeni beden başlangıç stoku",
+          });
+        }
+      }
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: { category: true, sizes: { orderBy: { size: "asc" } } },
     });
 
     return NextResponse.json(product);
-  } catch {
-    return NextResponse.json(
-      { error: "Ürün güncellenemedi." },
-      { status: 400 },
-    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Ürün güncellenemedi.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 

@@ -1,27 +1,26 @@
 "use client";
 
 import { calcProfit, formatCurrency, formatPercent } from "@/lib/profit";
-import type { ProductRow } from "@/components/StockTable";
+import type { StockRow } from "@/components/StockTable";
 
-export function CsvExportButton({ products }: { products: ProductRow[] }) {
+export function CsvExportButton({ rows }: { rows: StockRow[] }) {
   function handleExport() {
-    const header =
-      "ad,kategori,stok,birim,alis,satis,kar,marj";
-    const rows = products.map((p) => {
-      const { unitProfit, margin } = calcProfit(p.salePrice, p.costPrice);
+    const header = "ad,kategori,beden,stok,alis,satis,kar,marj";
+    const csvRows = rows.map((r) => {
+      const { unitProfit, margin } = calcProfit(r.salePrice, r.costPrice);
       return [
-        p.name,
-        p.category.name,
-        p.currentStock,
-        p.unit,
-        p.costPrice,
-        p.salePrice,
+        r.name,
+        r.category.name,
+        r.size,
+        r.currentStock,
+        r.costPrice,
+        r.salePrice,
         unitProfit.toFixed(2),
         margin.toFixed(1),
       ].join(",");
     });
 
-    const csv = [header, ...rows].join("\n");
+    const csv = [header, ...csvRows].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

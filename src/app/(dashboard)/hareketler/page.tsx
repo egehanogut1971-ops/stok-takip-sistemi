@@ -9,7 +9,10 @@ type Movement = {
   quantity: number;
   note: string | null;
   createdAt: string;
-  product: { name: string; unit: string; category: { name: string } };
+  productSize: {
+    size: string;
+    product: { name: string; category: { name: string } };
+  };
   user: { name: string };
 };
 
@@ -50,6 +53,7 @@ export default function MovementsPage() {
             <tr>
               <th className="px-4 py-3 text-left">Tarih</th>
               <th className="px-4 py-3 text-left">Ürün</th>
+              <th className="px-4 py-3 text-left">Beden</th>
               <th className="px-4 py-3 text-left">Tür</th>
               <th className="px-4 py-3 text-left">Miktar</th>
               <th className="px-4 py-3 text-left">Kim</th>
@@ -60,9 +64,10 @@ export default function MovementsPage() {
             {movements.map((m) => (
               <tr key={m.id} className="border-t">
                 <td className="px-4 py-3">{new Date(m.createdAt).toLocaleString("tr-TR")}</td>
-                <td className="px-4 py-3">{m.product.name}</td>
+                <td className="px-4 py-3">{m.productSize.product.name}</td>
+                <td className="px-4 py-3">{m.productSize.size}</td>
                 <td className="px-4 py-3">{MOVEMENT_LABELS[m.type as MovementType] ?? m.type}</td>
-                <td className="px-4 py-3">{m.quantity} {m.product.unit}</td>
+                <td className="px-4 py-3">{m.quantity} adet</td>
                 <td className="px-4 py-3 font-medium">{m.user.name}</td>
                 <td className="px-4 py-3 text-slate-600">{m.note ?? "—"}</td>
               </tr>

@@ -14,4 +14,23 @@ export const MOVEMENT_LABELS: Record<MovementType, string> = {
   DUZELTME: "Sayım Düzeltmesi",
 };
 
-export const UNITS = ["adet", "kg", "lt", "paket"] as const;
+export const SIZES = [
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "36",
+  "37",
+  "38",
+  "39",
+  "40",
+  "41",
+  "42",
+  "43",
+  "44",
+  "45",
+  "46",
+  "Tek Beden",
+] as const;

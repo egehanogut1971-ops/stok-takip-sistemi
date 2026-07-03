@@ -3,21 +3,34 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProfitPreview } from "@/components/ProfitPreview";
-import { UNITS } from "@/lib/constants";
+import { SIZES } from "@/lib/constants";
 import { formatCurrency, formatPercent, calcProfit } from "@/lib/profit";
 
 type Category = { id: string; name: string };
+
+type ProductSize = {
+  id: string;
+  size: string;
+  currentStock: number;
+  minStock: number;
+};
 
 type Product = {
   id: string;
   name: string;
   sku: string | null;
-  unit: string;
   costPrice: number;
   salePrice: number;
-  minStock: number;
-  currentStock: number;
   category: Category;
+  sizes: ProductSize[];
+};
+
+type SizeFormRow = {
+  id?: string;
+  size: string;
+  customSize: string;
+  initialStock: string;
+  minStock: string;
 };
 
 const emptyForm = {
@@ -26,16 +39,27 @@ const emptyForm = {
   categoryId: "",
   costPrice: "",
   salePrice: "",
-  minStock: "0",
-  initialStock: "0",
-  unit: "adet",
 };
+
+function defaultSizeRow(): SizeFormRow {
+  return {
+    size: "M",
+    customSize: "",
+    initialStock: "0",
+    minStock: "0",
+  };
+}
+
+function sizeValue(row: SizeFormRow): string {
+  return row.size === "__custom__" ? row.customSize.trim() : row.size;
+}
 
 export default function ProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [sizeRows, setSizeRows] = useState<SizeFormRow[]>([defaultSizeRow()]);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -63,15 +87,40 @@ export default function ProductsPage() {
       categoryId: product.category.id,
       costPrice: String(product.costPrice),
       salePrice: String(product.salePrice),
-      minStock: String(product.minStock),
-      initialStock: "0",
-      unit: product.unit,
     });
+    setSizeRows(
+      product.sizes.map((s) => {
+        const isPreset = (SIZES as readonly string[]).includes(s.size);
+        return {
+          id: s.id,
+          size: isPreset ? s.size : "__custom__",
+          customSize: isPreset ? "" : s.size,
+          initialStock: "0",
+          minStock: String(s.minStock),
+        };
+      }),
+    );
   }
 
   function resetForm() {
     setEditId(null);
     setForm(emptyForm);
+    setSizeRows([defaultSizeRow()]);
+  }
+
+  function addSizeRow() {
+    setSizeRows([...sizeRows, defaultSizeRow()]);
+  }
+
+  function removeSizeRow(index: number) {
+    if (sizeRows.length <= 1) return;
+    setSizeRows(sizeRows.filter((_, i) => i !== index));
+  }
+
+  function updateSizeRow(index: number, patch: Partial<SizeFormRow>) {
+    setSizeRows(
+      sizeRows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -79,15 +128,32 @@ export default function ProductsPage() {
     setError("");
     setSuccess("");
 
+    const sizes = sizeRows.map((row) => ({
+      id: row.id,
+      size: sizeValue(row),
+      initialStock: editId ? 0 : Number(row.initialStock),
+      minStock: Number(row.minStock),
+    }));
+
+    const emptySize = sizes.find((s) => !s.size);
+    if (emptySize) {
+      setError("Tüm beden alanları doldurulmalıdır.");
+      return;
+    }
+
+    const sizeNames = sizes.map((s) => s.size);
+    if (new Set(sizeNames).size !== sizeNames.length) {
+      setError("Aynı beden iki kez eklenemez.");
+      return;
+    }
+
     const payload = {
       name: form.name,
       sku: form.sku || null,
       categoryId: form.categoryId,
       costPrice: Number(form.costPrice),
       salePrice: Number(form.salePrice),
-      minStock: Number(form.minStock),
-      initialStock: editId ? 0 : Number(form.initialStock),
-      unit: form.unit,
+      sizes,
     };
 
     const res = await fetch(editId ? `/api/products/${editId}` : "/api/products", {
@@ -120,11 +186,12 @@ export default function ProductsPage() {
     setSuccess("");
     const lines = csvText.trim().split("\n").slice(1);
     const rows = lines.map((line) => {
-      const [name, category, quantity, costPrice, salePrice, minStock] =
+      const [name, category, size, quantity, costPrice, salePrice, minStock] =
         line.split(",").map((s) => s.trim());
       return {
         name,
         category,
+        size: size || "Tek Beden",
         quantity: Number(quantity ?? 0),
         costPrice: Number(costPrice ?? 0),
         salePrice: Number(salePrice ?? 0),
@@ -142,7 +209,10 @@ export default function ProductsPage() {
       setError(data.error ?? "İçe aktarma başarısız.");
       return;
     }
-    setSuccess(`${data.imported} ürün içe aktarıldı.`);
+    setSuccess(`${data.imported} satır içe aktarıldı.`);
+    if (data.errors?.length) {
+      setError(data.errors.join(" "));
+    }
     setCsvText("");
     loadData();
     router.refresh();
@@ -182,15 +252,6 @@ export default function ProductsPage() {
             onChange={(e) => setForm({ ...form, sku: e.target.value })}
             className="rounded-lg border px-4 py-3 text-lg"
           />
-          <select
-            value={form.unit}
-            onChange={(e) => setForm({ ...form, unit: e.target.value })}
-            className="rounded-lg border px-4 py-3 text-lg"
-          >
-            {UNITS.map((u) => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </select>
           <input
             type="number"
             step="0.01"
@@ -209,28 +270,103 @@ export default function ProductsPage() {
             className="rounded-lg border px-4 py-3 text-lg"
             required
           />
-          <input
-            type="number"
-            placeholder="Minimum stok"
-            value={form.minStock}
-            onChange={(e) => setForm({ ...form, minStock: e.target.value })}
-            className="rounded-lg border px-4 py-3 text-lg"
-          />
-          {!editId && (
-            <input
-              type="number"
-              placeholder="Başlangıç stoku"
-              value={form.initialStock}
-              onChange={(e) => setForm({ ...form, initialStock: e.target.value })}
-              className="rounded-lg border px-4 py-3 text-lg"
-            />
-          )}
         </div>
 
         <ProfitPreview
           costPrice={Number(form.costPrice) || 0}
           salePrice={Number(form.salePrice) || 0}
         />
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Bedenler</h3>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="min-w-full text-base">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-3 py-2 text-left">Beden</th>
+                  {!editId && (
+                    <th className="px-3 py-2 text-left">Başlangıç stoku</th>
+                  )}
+                  <th className="px-3 py-2 text-left">Min. stok</th>
+                  <th className="px-3 py-2 text-left"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {sizeRows.map((row, index) => (
+                  <tr key={row.id ?? index} className="border-t">
+                    <td className="px-3 py-2">
+                      <div className="flex gap-2">
+                        <select
+                          value={row.size}
+                          onChange={(e) =>
+                            updateSizeRow(index, { size: e.target.value })
+                          }
+                          className="rounded border px-2 py-2"
+                        >
+                          {SIZES.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                          <option value="__custom__">Özel...</option>
+                        </select>
+                        {row.size === "__custom__" && (
+                          <input
+                            placeholder="Beden yazın"
+                            value={row.customSize}
+                            onChange={(e) =>
+                              updateSizeRow(index, { customSize: e.target.value })
+                            }
+                            className="rounded border px-2 py-2"
+                          />
+                        )}
+                      </div>
+                    </td>
+                    {!editId && (
+                      <td className="px-3 py-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={row.initialStock}
+                          onChange={(e) =>
+                            updateSizeRow(index, { initialStock: e.target.value })
+                          }
+                          className="w-24 rounded border px-2 py-2"
+                        />
+                      </td>
+                    )}
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={row.minStock}
+                        onChange={(e) =>
+                          updateSizeRow(index, { minStock: e.target.value })
+                        }
+                        className="w-24 rounded border px-2 py-2"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => removeSizeRow(index)}
+                        disabled={sizeRows.length <= 1}
+                        className="text-red-600 hover:underline disabled:text-slate-400"
+                      >
+                        Sil
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button
+            type="button"
+            onClick={addSizeRow}
+            className="rounded-lg border border-dashed border-emerald-600 px-4 py-2 text-emerald-700 hover:bg-emerald-50"
+          >
+            + Beden ekle
+          </button>
+        </div>
 
         {error && <p className="text-red-700">{error}</p>}
         {success && <p className="text-green-700">{success}</p>}
@@ -250,14 +386,14 @@ export default function ProductsPage() {
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="mb-3 text-xl font-semibold">CSV ile Toplu İçe Aktarma</h2>
         <p className="mb-3 text-sm text-slate-600">
-          Format: ad,kategori,adet,alış,satış,minStok (ilk satır başlık)
+          Format: ad,kategori,beden,adet,alış,satış,minStok (ilk satır başlık)
         </p>
         <textarea
           value={csvText}
           onChange={(e) => setCsvText(e.target.value)}
           rows={5}
           className="w-full rounded-lg border px-4 py-3 font-mono text-sm"
-          placeholder="ad,kategori,adet,alis,satis,minStok&#10;Ürün A,Elektronik,10,100,150,2"
+          placeholder="ad,kategori,beden,adet,alis,satis,minStok&#10;Tişört,Giyim,S,5,100,150,2&#10;Tişört,Giyim,M,10,100,150,2"
         />
         <button
           onClick={handleImport}
@@ -272,8 +408,9 @@ export default function ProductsPage() {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-4 py-3 text-left">Ürün</th>
+              <th className="px-4 py-3 text-left">Bedenler</th>
               <th className="px-4 py-3 text-left">Kategori</th>
-              <th className="px-4 py-3 text-left">Stok</th>
+              <th className="px-4 py-3 text-left">Toplam Stok</th>
               <th className="px-4 py-3 text-left">Kar</th>
               <th className="px-4 py-3 text-left">İşlem</th>
             </tr>
@@ -281,11 +418,16 @@ export default function ProductsPage() {
           <tbody>
             {products.map((p) => {
               const { unitProfit, margin } = calcProfit(p.salePrice, p.costPrice);
+              const totalStock = p.sizes.reduce((s, sz) => s + sz.currentStock, 0);
+              const sizeSummary = p.sizes
+                .map((s) => `${s.size}: ${s.currentStock}`)
+                .join(", ");
               return (
                 <tr key={p.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{p.name}</td>
+                  <td className="px-4 py-3 text-sm">{sizeSummary}</td>
                   <td className="px-4 py-3">{p.category.name}</td>
-                  <td className="px-4 py-3">{p.currentStock} {p.unit}</td>
+                  <td className="px-4 py-3">{totalStock} adet</td>
                   <td className="px-4 py-3">{formatCurrency(unitProfit)} ({formatPercent(margin)})</td>
                   <td className="px-4 py-3">
                     <button onClick={() => startEdit(p)} className="mr-2 text-emerald-700 hover:underline">Düzenle</button>

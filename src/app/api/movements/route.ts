@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const productSizeId = searchParams.get("productSizeId");
   const productId = searchParams.get("productId");
   const type = searchParams.get("type");
   const from = searchParams.get("from");
@@ -18,7 +19,10 @@ export async function GET(request: Request) {
 
   const movements = await prisma.stockMovement.findMany({
     where: {
-      ...(productId ? { productId } : {}),
+      ...(productSizeId ? { productSizeId } : {}),
+      ...(productId
+        ? { productSize: { productId } }
+        : {}),
       ...(type ? { type } : {}),
       ...(from || to
         ? {
@@ -30,7 +34,9 @@ export async function GET(request: Request) {
         : {}),
     },
     include: {
-      product: { include: { category: true } },
+      productSize: {
+        include: { product: { include: { category: true } } },
+      },
       user: { select: { id: true, name: true, username: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -48,14 +54,14 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const productId = String(body.productId ?? "");
+    const productSizeId = String(body.productSizeId ?? "");
     const type = String(body.type ?? "") as MovementType;
     const quantity = Number(body.quantity ?? 0);
     const note = body.note ? String(body.note).trim() : undefined;
 
-    if (!productId || !type) {
+    if (!productSizeId || !type) {
       return NextResponse.json(
-        { error: "Ürün ve hareket türü gerekli." },
+        { error: "Beden ve hareket türü gerekli." },
         { status: 400 },
       );
     }
@@ -68,7 +74,7 @@ export async function POST(request: Request) {
     }
 
     const result = await applyStockMovement({
-      productId,
+      productSizeId,
       userId: session.user.id,
       type,
       quantity,

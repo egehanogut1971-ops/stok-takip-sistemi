@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
+import { getStockRows } from "@/lib/stockRows";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { StockPrintActions } from "@/components/StockPrintView";
 import { StockSummary, StockTable } from "@/components/StockTable";
@@ -15,20 +16,9 @@ export default async function HomePage({ searchParams }: PageProps) {
   const categoryId = params.categoryId;
   const q = params.q?.trim();
 
-  const [categories, products] = await Promise.all([
+  const [categories, rows] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: "asc" } }),
-    prisma.product.findMany({
-      where: {
-        ...(categoryId ? { categoryId } : {}),
-        ...(q
-          ? {
-              OR: [{ name: { contains: q } }, { sku: { contains: q } }],
-            }
-          : {}),
-      },
-      include: { category: true },
-      orderBy: { name: "asc" },
-    }),
+    getStockRows({ categoryId, q }),
   ]);
 
   const categoryName = categoryId
@@ -54,13 +44,13 @@ export default async function HomePage({ searchParams }: PageProps) {
       </div>
 
       <div className="no-print">
-        <StockSummary products={products} />
+        <StockSummary rows={rows} />
       </div>
       <div className="no-print flex flex-wrap gap-3">
-        <StockPrintActions products={products} categoryName={categoryName} />
-        <CsvExportButton products={products} />
+        <StockPrintActions rows={rows} categoryName={categoryName} />
+        <CsvExportButton rows={rows} />
       </div>
-      <StockTable products={products} />
+      <StockTable rows={rows} />
     </div>
   );
 }

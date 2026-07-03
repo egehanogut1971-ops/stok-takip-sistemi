@@ -4,28 +4,32 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MOVEMENT_TYPES } from "@/lib/constants";
 
-type Product = {
-  id: string;
+type StockRowOption = {
+  productSizeId: string;
   name: string;
+  size: string;
   currentStock: number;
-  unit: string;
   category: { name: string };
 };
 
 export default function StockInPage() {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [productId, setProductId] = useState("");
+  const [rows, setRows] = useState<StockRowOption[]>([]);
+  const [productSizeId, setProductSizeId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/products")
+  function loadRows() {
+    fetch("/api/products?view=rows")
       .then((r) => r.json())
-      .then(setProducts);
+      .then(setRows);
+  }
+
+  useEffect(() => {
+    loadRows();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -38,7 +42,7 @@ export default function StockInPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        productId,
+        productSizeId,
         type: MOVEMENT_TYPES.GIRIS,
         quantity: Number(quantity),
         note,
@@ -57,9 +61,7 @@ export default function StockInPage() {
     setQuantity("");
     setNote("");
     router.refresh();
-    fetch("/api/products")
-      .then((r) => r.json())
-      .then(setProducts);
+    loadRows();
   }
 
   return (
@@ -71,17 +73,17 @@ export default function StockInPage() {
 
       <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border bg-white p-6 shadow-sm">
         <div>
-          <label className="mb-2 block text-base font-medium">Ürün</label>
+          <label className="mb-2 block text-base font-medium">Ürün / Beden</label>
           <select
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
+            value={productSizeId}
+            onChange={(e) => setProductSizeId(e.target.value)}
             className="w-full rounded-lg border px-4 py-3 text-lg"
             required
           >
-            <option value="">Ürün seçin</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.currentStock} {p.unit}) — {p.category.name}
+            <option value="">Beden seçin</option>
+            {rows.map((r) => (
+              <option key={r.productSizeId} value={r.productSizeId}>
+                {r.name} — {r.size} ({r.currentStock} adet)
               </option>
             ))}
           </select>
