@@ -43,6 +43,7 @@ function isPublicApi(pathname: string) {
 export const authConfig = {
   pages: {
     signIn: "/magaza/giris",
+    error: "/magaza/giris",
   },
   session: {
     strategy: "jwt",

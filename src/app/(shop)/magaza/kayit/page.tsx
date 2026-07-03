@@ -33,7 +33,7 @@ export default function ShopRegisterPage() {
     }
 
     const result = await signIn("credentials", {
-      email: email.toLowerCase().trim(),
+      username: email.toLowerCase().trim(),
       password,
       redirect: false,
     });

@@ -18,7 +18,7 @@ export default function PanelLoginPage() {
     setLoading(true);
 
     const result = await signIn("credentials", {
-      username,
+      username: username.toLowerCase().trim(),
       password,
       redirect: false,
     });

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -15,13 +15,19 @@ export function ShopLoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (searchParams.get("error")) {
+      setError("Giriş başarısız. E-posta ve şifrenizi kontrol edin.");
+    }
+  }, [searchParams]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     const result = await signIn("credentials", {
-      email: email.toLowerCase().trim(),
+      username: email.toLowerCase().trim(),
       password,
       redirect: false,
     });
