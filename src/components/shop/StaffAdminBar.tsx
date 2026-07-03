@@ -13,7 +13,7 @@ export function StaffAdminBar() {
         <span className="text-[var(--shop-text-muted)]">Yönetici modu</span>
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href="/"
+            href="/panel"
             className="rounded-lg border border-[var(--shop-border)] bg-[var(--shop-surface)] px-3 py-1.5 font-medium text-[var(--shop-text-secondary)] transition hover:-translate-y-px"
           >
             Stok Paneli

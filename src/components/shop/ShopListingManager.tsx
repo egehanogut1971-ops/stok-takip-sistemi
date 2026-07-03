@@ -65,6 +65,7 @@ export function ShopListingManager() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   function loadData() {
     setLoading(true);
@@ -88,6 +89,32 @@ export function ShopListingManager() {
     setForm(emptyForm);
     setReviewRows([]);
     setError("");
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploadingImage(true);
+    setError("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/shop/upload", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Fotoğraf yüklenemedi.");
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        imageUrls: prev.imageUrls
+          ? `${prev.imageUrls.trim()}\n${data.url}`
+          : data.url,
+      }));
+      setSuccess("Fotoğraf yüklendi.");
+    } catch {
+      setError("Fotoğraf yüklenemedi.");
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   function startCreate(product: PendingProduct) {
@@ -261,8 +288,27 @@ export function ShopListingManager() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-[var(--shop-text-secondary)]">
-              Fotoğraflar (her satıra bir URL)
+              Fotoğraflar (her satıra bir URL veya dosya yükle)
             </label>
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              <label className="shop-btn-secondary inline-flex cursor-pointer px-4 py-2 text-sm">
+                {uploadingImage ? "Yükleniyor..." : "Dosya yükle"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  disabled={uploadingImage}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleImageUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              <span className="text-xs text-[var(--shop-text-muted)]">
+                Max 5MB · JPEG, PNG, WebP, GIF
+              </span>
+            </div>
             <textarea
               value={form.imageUrls}
               onChange={(e) => setForm({ ...form, imageUrls: e.target.value })}

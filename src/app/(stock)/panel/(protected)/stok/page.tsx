@@ -11,7 +11,7 @@ type PageProps = {
   searchParams: Promise<{ categoryId?: string; q?: string }>;
 };
 
-export default async function HomePage({ searchParams }: PageProps) {
+export default async function StockPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const categoryId = params.categoryId;
   const q = params.q?.trim();

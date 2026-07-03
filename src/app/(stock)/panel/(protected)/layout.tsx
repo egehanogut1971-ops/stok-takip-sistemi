@@ -3,14 +3,14 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { isStaff } from "@/lib/roles";
 
-export default async function DashboardLayout({
+export default async function PanelLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const session = await auth();
   if (!session?.user) {
-    redirect("/login");
+    redirect("/panel/giris");
   }
 
   if (!isStaff(session.user.role)) {

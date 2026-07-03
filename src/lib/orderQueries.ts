@@ -8,6 +8,13 @@ export async function getPublicOrder(orderNumber: string) {
   });
 }
 
+export async function getCustomerOrder(orderNumber: string, customerId: string) {
+  return prisma.order.findFirst({
+    where: { orderNumber, customerId },
+    include: { items: true },
+  });
+}
+
 export function formatShippingAddress(address: unknown): string {
   if (!address || typeof address !== "object") return "";
   const data = address as Record<string, unknown>;

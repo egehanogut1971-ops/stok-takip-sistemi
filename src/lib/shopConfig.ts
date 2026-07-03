@@ -7,6 +7,16 @@ export function isPaymentEnabled(): boolean {
   return isIyzicoConfigured();
 }
 
+export type PaymentMode = "live" | "sandbox" | "skipped";
+
+export function getPaymentMode(): PaymentMode {
+  if (process.env.SKIP_PAYMENT === "true" || !isIyzicoConfigured()) {
+    return "skipped";
+  }
+  const baseUrl = process.env.IYZICO_BASE_URL ?? "";
+  return baseUrl.includes("sandbox") ? "sandbox" : "live";
+}
+
 export function getShopName(): string {
   return process.env.SHOP_NAME?.trim() || "Mağaza";
 }

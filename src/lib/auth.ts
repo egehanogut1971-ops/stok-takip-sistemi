@@ -11,19 +11,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       name: "credentials",
       credentials: {
         username: { label: "Kullanıcı Adı", type: "text" },
+        email: { label: "E-posta", type: "email" },
         password: { label: "Şifre", type: "password" },
       },
       async authorize(credentials) {
         const username = credentials?.username as string | undefined;
+        const email = credentials?.email as string | undefined;
         const password = credentials?.password as string | undefined;
 
-        if (!username || !password) {
+        if (!password) {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { username: username.toLowerCase().trim() },
-        });
+        const loginId = (email ?? username ?? "").trim().toLowerCase();
+        if (!loginId) {
+          return null;
+        }
+
+        const user = loginId.includes("@")
+          ? await prisma.user.findUnique({ where: { email: loginId } })
+          : await prisma.user.findUnique({ where: { username: loginId } });
 
         if (!user) {
           return null;
@@ -38,6 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           name: user.name,
           username: user.username,
+          email: user.email ?? undefined,
           role: user.role,
         };
       },

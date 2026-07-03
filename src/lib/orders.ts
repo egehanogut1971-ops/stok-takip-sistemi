@@ -47,3 +47,28 @@ export function calcOrderTotals(subtotal: number) {
     total: subtotal + shippingCost,
   };
 }
+
+export function getTrackingUrl(
+  carrier: string | null | undefined,
+  trackingNumber: string | null | undefined,
+): string | null {
+  if (!carrier || !trackingNumber) return null;
+
+  const normalized = carrier.toLowerCase();
+  const encoded = encodeURIComponent(trackingNumber);
+
+  if (normalized.includes("yurti") || normalized.includes("yurtiçi")) {
+    return `https://www.yurticikargo.com/tr/online-servisler/gonderi-sorgula?code=${encoded}`;
+  }
+  if (normalized.includes("aras")) {
+    return `https://www.araskargo.com.tr/tr/cargo_tracking_detail.aspx?kargotakipno=${encoded}`;
+  }
+  if (normalized.includes("mng")) {
+    return `https://service.mngkargo.com.tr/iactive/popup/kargotakip.asp?k=${encoded}`;
+  }
+  if (normalized.includes("ptt")) {
+    return `https://gonderitakip.ptt.gov.tr/Track/Verify?q=${encoded}`;
+  }
+
+  return null;
+}

@@ -6,7 +6,7 @@ import {
   getOrderStatusLabel,
   getPublicOrder,
 } from "@/lib/orderQueries";
-import { ORDER_STATUS } from "@/lib/orders";
+import { getTrackingUrl, ORDER_STATUS } from "@/lib/orders";
 
 type PageProps = {
   params: Promise<{ orderNumber: string }>;
@@ -21,6 +21,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
   }
 
   const isPaid = order.status === ORDER_STATUS.ODENDI;
+  const trackingUrl = getTrackingUrl(order.carrier, order.trackingNumber);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -47,6 +48,23 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
         <p className="mt-1 text-sm opacity-80">
           Durum: {getOrderStatusLabel(order.status)}
         </p>
+        {order.status === ORDER_STATUS.KARGODA && order.trackingNumber && (
+          <div className="mt-4 rounded-xl bg-white/70 p-4 text-left text-sm">
+            <p className="font-medium">Kargo takip</p>
+            {order.carrier && <p className="mt-1 opacity-80">{order.carrier}</p>}
+            <p className="mt-1 font-mono">{order.trackingNumber}</p>
+            {trackingUrl && (
+              <a
+                href={trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block font-medium underline"
+              >
+                Kargoyu takip et
+              </a>
+            )}
+          </div>
+        )}
         {isPaid && (
           <p className="mt-3 text-sm text-emerald-700">
             Stok otomatik olarak düşürüldü.

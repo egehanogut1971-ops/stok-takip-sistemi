@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { getShopName } from "@/lib/shopConfig";
 import { CartLink } from "@/components/shop/CartLink";
 import { CategoryNav } from "@/components/shop/CategoryNav";
+import { ROLES } from "@/lib/roles";
+import { ShopAuthNav } from "@/components/shop/ShopAuthNav";
 
 type Category = { id: string; name: string };
 
@@ -12,6 +15,9 @@ export async function ShopHeader({
   categories?: Category[];
   activeCategoryId?: string;
 }) {
+  const session = await auth();
+  const isCustomer = session?.user?.role === ROLES.CUSTOMER;
+
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--shop-border)] bg-[var(--shop-surface)]/95 backdrop-blur-md">
       <div className="mx-auto max-w-6xl px-4 lg:px-8">
@@ -39,12 +45,11 @@ export async function ShopHeader({
           </form>
 
           <nav className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Link
-              href="/login"
-              className="hidden text-sm text-[var(--shop-text-muted)] hover:text-[var(--shop-text-primary)] sm:inline"
-            >
-              Giriş
-            </Link>
+            <ShopAuthNav
+              isLoggedIn={!!session?.user}
+              isCustomer={isCustomer}
+              userName={session?.user?.name}
+            />
             <CartLink />
           </nav>
         </div>

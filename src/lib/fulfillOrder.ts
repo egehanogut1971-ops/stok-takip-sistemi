@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { MOVEMENT_TYPES } from "@/lib/constants";
+import { notifyNewOrder } from "@/lib/email";
 import { ORDER_STATUS } from "@/lib/orders";
 import { ROLES } from "@/lib/roles";
 
@@ -87,6 +88,27 @@ export async function fulfillOrder(orderId: string): Promise<void> {
       },
     });
   });
+
+  const fulfilled = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
+
+  if (fulfilled) {
+    notifyNewOrder({
+      orderNumber: fulfilled.orderNumber,
+      total: fulfilled.total,
+      guestName: fulfilled.guestName,
+      guestEmail: fulfilled.guestEmail,
+      guestPhone: fulfilled.guestPhone,
+      items: fulfilled.items.map((item) => ({
+        productName: item.productName,
+        size: item.size,
+        quantity: item.quantity,
+        lineTotal: item.lineTotal,
+      })),
+    });
+  }
 }
 
 export async function markOrderPaymentFailed(orderId: string): Promise<void> {

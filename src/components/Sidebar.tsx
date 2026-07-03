@@ -5,17 +5,18 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 const links = [
-  { href: "/", label: "Mevcut Stok" },
-  { href: "/stok-gir", label: "Stok Giriş" },
-  { href: "/stok-cik", label: "Stok Çıkış" },
-  { href: "/urunler", label: "Ürünler" },
-  { href: "/siparisler", label: "Siparişler" },
-  { href: "/kategoriler", label: "Kategoriler" },
-  { href: "/hareketler", label: "Hareketler" },
-  { href: "/uyarilar", label: "Uyarılar" },
+  { href: "/panel", label: "Panel" },
+  { href: "/panel/stok", label: "Mevcut Stok" },
+  { href: "/panel/stok-gir", label: "Stok Giriş" },
+  { href: "/panel/stok-cik", label: "Stok Çıkış" },
+  { href: "/panel/urunler", label: "Ürünler" },
+  { href: "/panel/siparisler", label: "Siparişler" },
+  { href: "/panel/kategoriler", label: "Kategoriler" },
+  { href: "/panel/hareketler", label: "Hareketler" },
+  { href: "/panel/uyarilar", label: "Uyarılar" },
   { href: "/magaza", label: "Mağaza", external: true },
   { href: "/magaza/yonetim", label: "Mağaza Yönetimi", external: true },
-  { href: "/profil", label: "Profil" },
+  { href: "/panel/profil", label: "Profil" },
 ];
 
 export function Sidebar({ userName }: { userName: string }) {
@@ -63,7 +64,7 @@ export function Sidebar({ userName }: { userName: string }) {
       </nav>
       <div className="border-t border-slate-200 p-4">
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut({ callbackUrl: "/magaza" })}
           className="w-full rounded-lg border border-slate-300 px-4 py-3 text-base font-medium text-slate-700 hover:bg-slate-50"
         >
           Çıkış Yap

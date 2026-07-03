@@ -10,6 +10,7 @@ datasource db {
 model User {
   id        String          @id @default(cuid())
   username  String          @unique
+  email     String?         @unique
   name      String
   password  String
   role      String          @default("STAFF")
@@ -117,6 +118,9 @@ model Order {
   shippingCost    Float
   total           Float
   paymentRef      String?
+  trackingNumber  String?
+  carrier         String?
+  shippedAt       DateTime?
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

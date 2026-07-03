@@ -23,15 +23,40 @@ export async function PATCH(request: Request, { params }: Params) {
 
   try {
     const body = await request.json();
-    const status = String(body.status ?? "");
+    const status = body.status ? String(body.status) : undefined;
+    const trackingNumber =
+      body.trackingNumber !== undefined
+        ? String(body.trackingNumber).trim() || null
+        : undefined;
+    const carrier =
+      body.carrier !== undefined
+        ? String(body.carrier).trim() || null
+        : undefined;
 
-    if (!ALLOWED_STATUSES.includes(status as (typeof ALLOWED_STATUSES)[number])) {
+    if (
+      status &&
+      !ALLOWED_STATUSES.includes(status as (typeof ALLOWED_STATUSES)[number])
+    ) {
       return NextResponse.json({ error: "Geçersiz durum." }, { status: 400 });
+    }
+
+    const data: {
+      status?: string;
+      trackingNumber?: string | null;
+      carrier?: string | null;
+      shippedAt?: Date | null;
+    } = {};
+
+    if (status) data.status = status;
+    if (trackingNumber !== undefined) data.trackingNumber = trackingNumber;
+    if (carrier !== undefined) data.carrier = carrier;
+    if (status === ORDER_STATUS.KARGODA) {
+      data.shippedAt = new Date();
     }
 
     const order = await prisma.order.update({
       where: { id },
-      data: { status },
+      data,
       include: { items: true },
     });
 
