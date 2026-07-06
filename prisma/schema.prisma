@@ -54,6 +54,8 @@ model ShopListing {
   description String?
   sizeChart   String?
   isPublished Boolean             @default(false)
+  isFeatured  Boolean             @default(false)
+  sortOrder   Int                 @default(0)
   images      ShopListingImage[]
   reviews     ShopReview[]
   createdAt   DateTime            @default(now())
@@ -142,6 +144,7 @@ model OrderItem {
 model StockMovement {
   id            String      @id @default(cuid())
   type          String
+  source        String      @default("MANUAL")
   quantity      Int
   note          String?
   productSizeId String

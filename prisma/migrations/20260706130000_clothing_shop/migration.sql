@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "StockMovement" ADD COLUMN "source" TEXT NOT NULL DEFAULT 'MANUAL';
+
+-- AlterTable
+ALTER TABLE "ShopListing" ADD COLUMN "isFeatured" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ShopListing" ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0;

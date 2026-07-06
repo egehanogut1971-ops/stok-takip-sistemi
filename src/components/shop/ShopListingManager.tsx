@@ -29,6 +29,8 @@ type Listing = {
   description: string | null;
   sizeChart: string | null;
   isPublished: boolean;
+  isFeatured: boolean;
+  sortOrder: number;
   images: { url: string; sortOrder: number }[];
   reviews: { authorName: string; rating: number; text: string }[];
   product: PendingProduct;
@@ -47,6 +49,8 @@ const emptyForm = {
   sizeChart: "",
   slug: "",
   isPublished: true,
+  isFeatured: false,
+  sortOrder: "0",
   imageUrls: "",
 };
 
@@ -138,6 +142,8 @@ export function ShopListingManager() {
       sizeChart: listing.sizeChart ?? "",
       slug: listing.slug,
       isPublished: listing.isPublished,
+      isFeatured: listing.isFeatured ?? false,
+      sortOrder: String(listing.sortOrder ?? 0),
       imageUrls: listing.images.map((img) => img.url).join("\n"),
     });
     setReviewRows(
@@ -172,6 +178,8 @@ export function ShopListingManager() {
       sizeChart: form.sizeChart || null,
       slug: form.slug || undefined,
       isPublished: form.isPublished,
+      isFeatured: form.isFeatured,
+      sortOrder: Number(form.sortOrder) || 0,
       images: form.imageUrls
         .split("\n")
         .map((line) => line.trim())
@@ -314,7 +322,50 @@ export function ShopListingManager() {
               onChange={(e) => setForm({ ...form, imageUrls: e.target.value })}
               rows={3}
               className="shop-input w-full font-mono text-sm"
+              placeholder="/resim/urun-adi.jpg"
             />
+            {form.imageUrls.trim() && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {form.imageUrls
+                  .split("\n")
+                  .map((line) => line.trim())
+                  .filter(Boolean)
+                  .map((url) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={url}
+                      src={url}
+                      alt=""
+                      className="h-16 w-16 border border-[var(--shop-border)] object-cover"
+                    />
+                  ))}
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={form.isFeatured}
+                onChange={(e) =>
+                  setForm({ ...form, isFeatured: e.target.checked })
+                }
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Yeni Sezon / Öne çıkar</span>
+            </label>
+            <div>
+              <label className="mb-1 block text-sm text-[var(--shop-text-secondary)]">
+                Sıra (küçük önce)
+              </label>
+              <input
+                type="number"
+                value={form.sortOrder}
+                onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
+                className="shop-input w-full"
+              />
+            </div>
           </div>
 
           <div className="space-y-3">

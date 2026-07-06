@@ -1,11 +1,6 @@
-import Link from "next/link";
 import { HeroSection } from "@/components/shop/HeroSection";
 import { ProductCard } from "@/components/shop/ProductCard";
-import { CategoryNav } from "@/components/shop/CategoryNav";
-import {
-  getPublishedListings,
-  getShopCategories,
-} from "@/lib/shop";
+import { getFeaturedListings, getPublishedListings } from "@/lib/shop";
 
 type PageProps = {
   searchParams: Promise<{ q?: string; kategori?: string }>;
@@ -17,69 +12,62 @@ export default async function MagazaPage({ searchParams }: PageProps) {
   const categoryId = params.kategori;
   const showHero = !q && !categoryId;
 
-  const [listings, categories] = await Promise.all([
+  const [listings, featured] = await Promise.all([
     getPublishedListings({ q, categoryId }),
-    getShopCategories(),
+    showHero ? getFeaturedListings(8) : Promise.resolve([]),
   ]);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-16">
       {showHero && <HeroSection />}
 
-      <section id="kategoriler" className="scroll-mt-24">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Kategoriler</h2>
-        <CategoryNav categories={categories} activeId={categoryId} />
-      </section>
+      {showHero && featured.length > 0 && (
+        <section id="yeni-sezon" className="scroll-mt-24 space-y-8">
+          <div className="text-center">
+            <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-[var(--shop-text-muted)]">
+              Öne Çıkanlar
+            </p>
+            <h2 className="font-display mt-2 text-3xl text-[var(--shop-text-primary)]">
+              Yeni Sezon
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
+            {featured.map((listing) => (
+              <ProductCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section id="urunler" className="scroll-mt-24 space-y-6">
+      <section id="urunler" className="scroll-mt-24 space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">
-              {q ? `"${q}" arama sonuçları` : "Tüm Ürünler"}
-            </h2>
-            <p className="mt-1 text-[var(--shop-text-muted)]">
-              {listings.length} ürün listeleniyor
+            <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-[var(--shop-text-muted)]">
+              Koleksiyon
             </p>
+            <h2 className="font-display mt-2 text-3xl text-[var(--shop-text-primary)]">
+              {q ? `"${q}"` : "Tüm Ürünler"}
+            </h2>
           </div>
-          <form action="/magaza" method="get" className="flex gap-2 md:hidden">
+          <form action="/magaza" method="get" className="flex gap-2">
             <input
               name="q"
               defaultValue={q}
               placeholder="Ara..."
-              className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm"
+              className="shop-input w-full min-w-[200px] text-sm sm:w-56"
             />
-            <button
-              type="submit"
-              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Ara
-            </button>
           </form>
         </div>
 
         {listings.length === 0 ? (
-          <div className="shop-card border border-dashed border-[var(--shop-border)] p-16 text-center">
-            <p className="text-lg text-[var(--shop-text-muted)]">Henüz yayında ürün yok.</p>
-            <p className="mt-2 text-sm text-[var(--shop-text-faint)]">
-              Stok panelinden ürün ekleyin, ardından Mağaza Yönetimi&apos;nden vitrine çıkarın.
-            </p>
+          <div className="border border-dashed border-[var(--shop-border)] py-16 text-center text-[var(--shop-text-muted)]">
+            Ürün bulunamadı.
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
             {listings.map((listing) => (
               <ProductCard key={listing.id} listing={listing} />
             ))}
-          </div>
-        )}
-
-        {(q || categoryId) && (
-          <div className="text-center">
-            <Link
-              href="/magaza"
-              className="text-sm font-medium text-emerald-700 hover:underline"
-            >
-              Tüm ürünleri göster
-            </Link>
           </div>
         )}
       </section>

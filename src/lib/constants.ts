@@ -14,6 +14,19 @@ export const MOVEMENT_LABELS: Record<MovementType, string> = {
   DUZELTME: "Sayım Düzeltmesi",
 };
 
+export const MOVEMENT_SOURCES = {
+  MANUAL: "MANUAL",
+  WEB: "WEB",
+} as const;
+
+export type MovementSource =
+  (typeof MOVEMENT_SOURCES)[keyof typeof MOVEMENT_SOURCES];
+
+export const MOVEMENT_SOURCE_LABELS: Record<MovementSource, string> = {
+  MANUAL: "Manuel",
+  WEB: "Web Satışı",
+};
+
 export const SIZES = [
   "XS",
   "S",

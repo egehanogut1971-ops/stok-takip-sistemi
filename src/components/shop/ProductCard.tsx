@@ -1,10 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { formatCurrency } from "@/lib/profit";
-import {
-  getListingCoverImage,
-  getTotalStock,
-  isListingInStock,
-} from "@/lib/shop";
+import { isListingInStock } from "@/lib/stockUtils";
 
 type ListingCardProps = {
   listing: {
@@ -19,55 +17,65 @@ type ListingCardProps = {
   };
 };
 
+function getCoverImage(images: { url: string; sortOrder: number }[]) {
+  if (images.length === 0) return null;
+  const sorted = [...images].sort((a, b) => a.sortOrder - b.sortOrder);
+  return sorted[0]?.url ?? null;
+}
+
 export function ProductCard({ listing }: ListingCardProps) {
-  const cover = getListingCoverImage(listing.images);
+  const cover = getCoverImage(listing.images);
+  const hoverImage =
+    listing.images.length > 1
+      ? listing.images[1]?.url ?? cover
+      : cover;
   const inStock = isListingInStock(listing.product.sizes);
 
   return (
     <Link
       href={`/magaza/urun/${listing.slug}`}
-      className="group flex flex-col overflow-hidden shop-card transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shop-shadow-hover)]"
+      className="group flex flex-col"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-[var(--shop-surface-muted)]">
         {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cover}
-            alt={listing.displayName}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={cover}
+              alt={listing.displayName}
+              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500 group-hover:opacity-0"
+            />
+            {hoverImage && hoverImage !== cover && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={hoverImage}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              />
+            )}
+          </>
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-[var(--shop-text-faint)]">
+          <div className="flex h-full items-center justify-center text-xs text-[var(--shop-text-faint)]">
             Görsel yok
           </div>
         )}
         {!inStock && (
-          <span className="absolute left-3 top-3 rounded-full bg-[var(--shop-text-primary)]/80 px-3 py-1 text-xs font-medium text-white">
+          <span className="absolute left-3 top-3 bg-white/90 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-[var(--shop-text-muted)]">
             Tükendi
           </span>
         )}
-        <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-[var(--shop-text-muted)] backdrop-blur">
-          {listing.product.category.name}
-        </span>
       </div>
-      <div className="flex flex-1 flex-col p-4">
-        <h2 className="line-clamp-2 font-semibold text-[var(--shop-text-primary)]">
+      <div className="mt-4 space-y-1">
+        <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--shop-text-muted)]">
+          {listing.product.category.name}
+        </p>
+        <h3 className="text-sm font-medium text-[var(--shop-text-primary)]">
           {listing.displayName}
-        </h2>
-        <div className="mt-auto flex items-end justify-between pt-3">
-          <p className="text-lg font-semibold text-[var(--shop-text-primary)]">
-            {formatCurrency(listing.salePrice)}
-          </p>
-          {inStock && (
-            <span className="rounded-full bg-[var(--shop-accent-soft)] px-2 py-0.5 text-xs text-[var(--shop-success)]">
-              Stokta
-            </span>
-          )}
-        </div>
+        </h3>
+        <p className="text-sm text-[var(--shop-text-secondary)]">
+          {formatCurrency(listing.salePrice)}
+        </p>
       </div>
     </Link>
   );
 }
-
-// Backward-compatible export name
-export type ProductCardProps = ListingCardProps;

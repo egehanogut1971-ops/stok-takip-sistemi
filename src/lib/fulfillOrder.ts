@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { MOVEMENT_TYPES } from "@/lib/constants";
+import { MOVEMENT_SOURCES, MOVEMENT_TYPES } from "@/lib/constants";
 import { notifyNewOrder } from "@/lib/email";
 import { ORDER_STATUS } from "@/lib/orders";
 import { ROLES } from "@/lib/roles";
@@ -68,8 +68,9 @@ export async function fulfillOrder(orderId: string): Promise<void> {
           productSizeId: item.productSizeId,
           userId: systemUserId,
           type: MOVEMENT_TYPES.CIKIS,
+          source: MOVEMENT_SOURCES.WEB,
           quantity: item.quantity,
-          note: `Sipariş #${order.orderNumber}`,
+          note: `Web Satışı — ${item.productName} - ${item.size} Beden — Sipariş #${order.orderNumber}`,
         },
       });
 

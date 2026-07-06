@@ -1,22 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCartDrawer } from "@/components/shop/CartDrawerProvider";
 
 export function CartLink() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    fetch("/api/shop/cart")
-      .then((res) => res.json())
-      .then((data) => setCount(data.itemCount ?? 0))
-      .catch(() => setCount(0));
-  }, []);
+  const { cartCount, openCart } = useCartDrawer();
 
   return (
-    <Link
-      href="/magaza/sepet"
-      className="relative flex items-center gap-1.5 rounded-full border border-[var(--shop-border)] px-3 py-2 text-sm font-medium text-[var(--shop-text-secondary)] transition hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)]"
+    <button
+      type="button"
+      onClick={() => openCart("cart")}
+      className="relative flex items-center gap-1.5 px-2 py-2 text-sm text-[var(--shop-text-secondary)] transition hover:text-[var(--shop-text-primary)]"
+      aria-label="Sepeti aç"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -24,7 +18,7 @@ export function CartLink() {
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={1.5}
       >
         <path
           strokeLinecap="round"
@@ -32,12 +26,14 @@ export function CartLink() {
           d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
         />
       </svg>
-      <span className="hidden sm:inline">Sepet</span>
-      {count > 0 && (
-        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--shop-accent)] px-1 text-xs font-bold text-white">
-          {count}
+      <span className="hidden text-[11px] uppercase tracking-wider sm:inline">
+        Sepet
+      </span>
+      {cartCount > 0 && (
+        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center bg-[var(--shop-accent)] px-1 text-[10px] font-medium text-white">
+          {cartCount}
         </span>
       )}
-    </Link>
+    </button>
   );
 }

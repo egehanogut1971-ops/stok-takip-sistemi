@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { MOVEMENT_TYPES, type MovementType } from "@/lib/constants";
+import {
+  MOVEMENT_SOURCES,
+  MOVEMENT_TYPES,
+  type MovementType,
+} from "@/lib/constants";
 
 export async function applyStockMovement({
   productSizeId,
@@ -47,6 +51,7 @@ export async function applyStockMovement({
         productSizeId,
         userId,
         type,
+        source: MOVEMENT_SOURCES.MANUAL,
         quantity: type === MOVEMENT_TYPES.DUZELTME ? Math.abs(delta) : quantity,
         note,
       },

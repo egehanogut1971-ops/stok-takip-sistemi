@@ -24,7 +24,16 @@ export async function getPublishedListings(options?: {
         : {}),
     },
     include: listingInclude,
-    orderBy: { displayName: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { displayName: "asc" }],
+  });
+}
+
+export async function getFeaturedListings(limit = 8) {
+  return prisma.shopListing.findMany({
+    where: { isPublished: true, isFeatured: true },
+    include: listingInclude,
+    orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
+    take: limit,
   });
 }
 

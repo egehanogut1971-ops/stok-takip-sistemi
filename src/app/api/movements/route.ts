@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const productSizeId = searchParams.get("productSizeId");
   const productId = searchParams.get("productId");
   const type = searchParams.get("type");
+  const source = searchParams.get("source");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
         ? { productSize: { productId } }
         : {}),
       ...(type ? { type } : {}),
+      ...(source ? { source } : {}),
       ...(from || to
         ? {
             createdAt: {

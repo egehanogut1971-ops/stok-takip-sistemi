@@ -49,6 +49,8 @@ export async function PUT(request: Request, { params }: Params) {
       : null;
     const sizeChart = body.sizeChart ? String(body.sizeChart).trim() : null;
     const isPublished = Boolean(body.isPublished);
+    const isFeatured = Boolean(body.isFeatured);
+    const sortOrder = Number(body.sortOrder ?? 0);
     const slugInput = body.slug ? String(body.slug).trim() : "";
     const imageUrls = parseImageUrls(body.images);
     const reviews = parseReviews(body.reviews);
@@ -85,6 +87,8 @@ export async function PUT(request: Request, { params }: Params) {
         description,
         sizeChart,
         isPublished,
+        isFeatured,
+        sortOrder,
       },
     });
 

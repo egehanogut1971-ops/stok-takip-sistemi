@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCartDrawer } from "@/components/shop/CartDrawerProvider";
 
 type SizeOption = {
   id: string;
@@ -12,11 +12,13 @@ type SizeOption = {
 export function AddToCartForm({
   sizes,
   disabled,
+  compact = false,
 }: {
   sizes: SizeOption[];
   disabled?: boolean;
+  compact?: boolean;
 }) {
-  const router = useRouter();
+  const { openCart, refreshCartCount } = useCartDrawer();
   const availableSizes = sizes.filter((size) => size.currentStock > 0);
   const allSizes = sizes;
   const [productSizeId, setProductSizeId] = useState(
@@ -48,76 +50,81 @@ export function AddToCartForm({
       return;
     }
 
-    router.push("/magaza/sepet");
-    router.refresh();
+    await refreshCartCount();
+    openCart("cart");
   }
 
   if (availableSizes.length === 0 || disabled) {
     return (
-      <div className="shop-card p-5 text-sm text-[var(--shop-text-muted)]">
+      <p className="text-sm text-[var(--shop-text-muted)]">
         Bu ürün şu an sepete eklenemez.
-      </div>
+      </p>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="shop-card p-6">
-      <h2 className="font-semibold text-[var(--shop-text-primary)]">Sepete Ekle</h2>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {allSizes.map((size) => {
-          const outOfStock = size.currentStock <= 0;
-          const selected = productSizeId === size.id;
-          return (
-            <button
-              key={size.id}
-              type="button"
-              disabled={outOfStock}
-              onClick={() => {
-                if (outOfStock) return;
-                setProductSizeId(size.id);
-                setQuantity(1);
-              }}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                outOfStock
-                  ? "cursor-not-allowed bg-[var(--shop-surface-muted)] text-[var(--shop-text-faint)] line-through opacity-50"
-                  : selected
-                    ? "bg-[var(--shop-accent)] text-white"
-                    : "bg-[var(--shop-accent-soft)] text-[var(--shop-text-secondary)] hover:bg-[var(--shop-accent-soft)]"
-              }`}
-            >
-              {size.size}
-            </button>
-          );
-        })}
+    <form onSubmit={handleSubmit} className={compact ? "space-y-4" : "space-y-6"}>
+      <div>
+        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--shop-text-muted)]">
+          Beden Seçin
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {allSizes.map((size) => {
+            const outOfStock = size.currentStock <= 0;
+            const selected = productSizeId === size.id;
+            return (
+              <button
+                key={size.id}
+                type="button"
+                disabled={outOfStock}
+                onClick={() => {
+                  if (outOfStock) return;
+                  setProductSizeId(size.id);
+                  setQuantity(1);
+                }}
+                className={`size-btn ${
+                  outOfStock
+                    ? "size-btn-disabled"
+                    : selected
+                      ? "size-btn-selected"
+                      : "hover:border-[var(--shop-accent)]"
+                }`}
+              >
+                {size.size}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-4">
-        <label className="text-sm font-medium text-[var(--shop-text-secondary)]">
-          Adet
-        </label>
-        <input
-          type="number"
-          min={1}
-          max={maxQuantity}
-          value={quantity}
-          onChange={(e) =>
-            setQuantity(
-              Math.min(maxQuantity, Math.max(1, Number(e.target.value) || 1)),
-            )
-          }
-          className="shop-input w-20 text-center"
-        />
-      </div>
+      {!compact && (
+        <div className="flex items-center gap-4">
+          <label className="text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--shop-text-muted)]">
+            Adet
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={maxQuantity}
+            value={quantity}
+            onChange={(e) =>
+              setQuantity(
+                Math.min(maxQuantity, Math.max(1, Number(e.target.value) || 1)),
+              )
+            }
+            className="shop-input w-20 text-center text-sm"
+          />
+        </div>
+      )}
 
       {error && (
-        <p className="mt-3 text-sm text-[var(--shop-error)]">{error}</p>
+        <p className="text-sm text-[var(--shop-error)]">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="shop-btn-primary mt-6 w-full py-3.5 text-sm disabled:opacity-60"
+        className="shop-btn-primary w-full py-4 disabled:opacity-60"
       >
         {loading ? "Ekleniyor..." : "Sepete Ekle"}
       </button>

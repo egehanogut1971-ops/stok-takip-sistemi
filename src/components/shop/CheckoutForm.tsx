@@ -7,10 +7,19 @@ import Link from "next/link";
 
 type CheckoutFormProps = {
   paymentEnabled?: boolean;
+  variant?: "page" | "drawer";
+  onBack?: () => void;
+  onSuccess?: () => void;
 };
 
-export function CheckoutForm({ paymentEnabled = true }: CheckoutFormProps) {
+export function CheckoutForm({
+  paymentEnabled = true,
+  variant = "page",
+  onBack,
+  onSuccess,
+}: CheckoutFormProps) {
   const router = useRouter();
+  const isDrawer = variant === "drawer";
   const [subtotal, setSubtotal] = useState(0);
   const [shippingCost, setShippingCost] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -35,14 +44,18 @@ export function CheckoutForm({ paymentEnabled = true }: CheckoutFormProps) {
         setShippingCost(data.shippingCost ?? 0);
         setLoading(false);
         if ((data.items ?? []).length === 0) {
-          router.replace("/magaza/sepet");
+          if (isDrawer && onBack) {
+            onBack();
+          } else if (!isDrawer) {
+            router.replace("/magaza/sepet");
+          }
         }
       })
       .catch(() => {
         setLoading(false);
-        router.replace("/magaza/sepet");
+        if (!isDrawer) router.replace("/magaza/sepet");
       });
-  }, [router]);
+  }, [router, isDrawer, onBack]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,6 +92,8 @@ export function CheckoutForm({ paymentEnabled = true }: CheckoutFormProps) {
       return;
     }
 
+    onSuccess?.();
+
     if (data.paymentEnabled === false) {
       router.push(`/magaza/siparis/${data.orderNumber}`);
     } else {
@@ -88,25 +103,27 @@ export function CheckoutForm({ paymentEnabled = true }: CheckoutFormProps) {
   }
 
   if (loading) {
-    return (
-      <div className="rounded-2xl bg-white p-12 text-center ring-1 ring-slate-200">
-        <p className="text-slate-600">Yükleniyor...</p>
-      </div>
-    );
+    return <p className="text-sm text-[var(--shop-text-muted)]">Yükleniyor...</p>;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-[2fr_1fr]">
-      <div className="space-y-4 rounded-2xl bg-white p-6 ring-1 ring-slate-200">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Teslimat Bilgileri
-        </h2>
+    <form onSubmit={handleSubmit} className={isDrawer ? "space-y-6" : "grid gap-8 lg:grid-cols-[2fr_1fr]"}>
+      <div className="space-y-4">
+        {isDrawer && onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-xs uppercase tracking-wider text-[var(--shop-text-muted)] hover:text-[var(--shop-text-primary)]"
+          >
+            ← Sepete dön
+          </button>
+        )}
 
         <input
           placeholder="Ad Soyad"
           value={form.guestName}
           onChange={(e) => setForm({ ...form, guestName: e.target.value })}
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          className="shop-input w-full text-sm"
           required
         />
         <input
@@ -114,29 +131,29 @@ export function CheckoutForm({ paymentEnabled = true }: CheckoutFormProps) {
           placeholder="E-posta"
           value={form.guestEmail}
           onChange={(e) => setForm({ ...form, guestEmail: e.target.value })}
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          className="shop-input w-full text-sm"
           required
         />
         <input
-          placeholder="Telefon (05xx xxx xx xx)"
+          placeholder="Telefon"
           value={form.guestPhone}
           onChange={(e) => setForm({ ...form, guestPhone: e.target.value })}
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          className="shop-input w-full text-sm"
           required
         />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           <input
             placeholder="İl"
             value={form.city}
             onChange={(e) => setForm({ ...form, city: e.target.value })}
-            className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            className="shop-input text-sm"
             required
           />
           <input
             placeholder="İlçe"
             value={form.district}
             onChange={(e) => setForm({ ...form, district: e.target.value })}
-            className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            className="shop-input text-sm"
             required
           />
         </div>
@@ -145,67 +162,48 @@ export function CheckoutForm({ paymentEnabled = true }: CheckoutFormProps) {
           value={form.line}
           onChange={(e) => setForm({ ...form, line: e.target.value })}
           rows={3}
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          className="shop-input w-full text-sm"
           required
         />
 
-        <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+        <label className="flex items-start gap-3 text-xs text-[var(--shop-text-muted)]">
           <input
             type="checkbox"
             checked={acceptedTerms}
             onChange={(e) => setAcceptedTerms(e.target.checked)}
-            className="mt-1 h-4 w-4"
+            className="mt-0.5"
           />
           <span>
-            <Link
-              href="/magaza/mesafeli-satis"
-              target="_blank"
-              className="font-medium text-emerald-700 hover:underline"
-            >
+            <Link href="/magaza/mesafeli-satis" target="_blank" className="underline">
               Mesafeli satış sözleşmesini
             </Link>{" "}
-            ve{" "}
-            <Link
-              href="/magaza/gizlilik"
-              target="_blank"
-              className="font-medium text-emerald-700 hover:underline"
-            >
-              gizlilik politikasını
-            </Link>{" "}
-            okudum, kabul ediyorum.
+            kabul ediyorum.
           </span>
         </label>
       </div>
 
-      <aside className="h-fit rounded-2xl bg-white p-6 ring-1 ring-slate-200">
-        <h2 className="text-lg font-semibold text-slate-900">Sipariş Özeti</h2>
-        <div className="mt-4 space-y-2 text-slate-700">
-          <div className="flex justify-between text-sm">
+      <aside className={isDrawer ? "border-t border-[var(--shop-border)] pt-4" : "shop-card p-6"}>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
             <span>Ara toplam</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between">
             <span>Kargo</span>
             <span>{formatCurrency(shippingCost)}</span>
           </div>
-          <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-bold">
+          <div className="flex justify-between border-t border-[var(--shop-border)] pt-3 font-medium">
             <span>Toplam</span>
             <span>{formatCurrency(subtotal + shippingCost)}</span>
           </div>
         </div>
 
-        <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
-          {paymentEnabled
-            ? "Sonraki adımda iyzico ile güvenli kart ödemesi yapılır. Ödeme onaylandığında stok otomatik düşer."
-            : "Siparişiniz kaydedilir ve stok otomatik düşer. Ödeme entegrasyonu daha sonra eklenecek."}
-        </p>
-
-        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-sm text-[var(--shop-error)]">{error}</p>}
 
         <button
           type="submit"
           disabled={submitting}
-          className="mt-6 w-full rounded-full bg-emerald-600 py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          className="shop-btn-primary mt-6 w-full py-4 disabled:opacity-60"
         >
           {submitting
             ? "Hazırlanıyor..."
